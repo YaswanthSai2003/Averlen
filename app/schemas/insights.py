@@ -8,5 +8,7 @@ class InsightQuery(SQLModel):
 class InsightResponse(SQLModel):
     question: str
     answer: str
+    supporting_facts: list[str]
+    confidence: str
     context_summary: str
     source: str

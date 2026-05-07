@@ -1,32 +1,28 @@
 # Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-
-# Virtual environments
 venv/
-.venv/
-
-# Environment files
-.env
-
-# Database
-*.db
-*.sqlite3
-
-# Logs
-*.log
-
-# Caches
+__pycache__/
+*.pyc
 .pytest_cache/
 .mypy_cache/
-.ruff_cache/
 
-# IDE
+# Environment
+.env
+.env.local
+.env.docker
+
+# Uploads / local files
+uploads/
+*.db
+*.sqlite
+*.sqlite3
+
+# Node / frontend later
+node_modules/
+dist/
+.env.production
+.env.development.local
+
+# OS / editor
+.DS_Store
 .vscode/
 .idea/
-
-# OS
-.DS_Store
-Thumbs.db

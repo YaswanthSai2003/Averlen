@@ -14,6 +14,7 @@ class PropertyCreate(SQLModel):
 
 class PropertyRead(SQLModel):
     id: int
+    organization_id: int
     name: str
     city: str
     property_type: str

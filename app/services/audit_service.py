@@ -12,6 +12,11 @@ def get_client_ip(request: Request) -> str | None:
     if forwarded_for:
         return forwarded_for.split(",")[0].strip()
 
+    real_ip = request.headers.get("x-real-ip")
+
+    if real_ip:
+        return real_ip.strip()
+
     if request.client:
         return request.client.host
 
@@ -53,6 +58,9 @@ def infer_action(method: str, path: str) -> str:
     if path == "/api/auth/register":
         return "REGISTER_ATTEMPT"
 
+    if path == "/api/auth/demo-login":
+        return "DEMO_LOGIN"
+
     if path.startswith("/api/properties"):
         return "PROPERTY_ACCESS"
 
@@ -68,10 +76,24 @@ def infer_action(method: str, path: str) -> str:
     if path.startswith("/api/insights"):
         return "AI_INSIGHT_ACCESSED"
 
+    if path.startswith("/api/audit-logs"):
+        return "AUDIT_LOGS_VIEWED"
+
     if path.startswith("/docs") or path.startswith("/openapi.json"):
         return "DOCS_VIEWED"
 
     return "API_ACCESS"
+
+
+def should_skip_middleware_audit(path: str) -> bool:
+    skip_paths = {
+        "/favicon.ico",
+        "/api/auth/login",
+        "/api/auth/register",
+        "/api/auth/demo-login",
+    }
+
+    return path in skip_paths
 
 
 def create_audit_log(
@@ -82,11 +104,7 @@ def create_audit_log(
 ) -> None:
     path = request.url.path
 
-    skip_paths = {
-        "/favicon.ico",
-    }
-
-    if path in skip_paths:
+    if should_skip_middleware_audit(path):
         return
 
     user = get_user_from_request_token(request, session)
@@ -98,6 +116,32 @@ def create_audit_log(
         action=infer_action(request.method, path),
         method=request.method,
         path=path,
+        status_code=status_code,
+        duration_ms=duration_ms,
+        ip_address=get_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
+
+    session.add(audit_log)
+    session.commit()
+
+
+def create_manual_audit_log(
+    session: Session,
+    request: Request,
+    action: str,
+    status_code: int,
+    email: str | None = None,
+    user: User | None = None,
+    duration_ms: float = 0.0,
+) -> None:
+    audit_log = AuditLog(
+        user_id=user.id if user else None,
+        organization_id=user.organization_id if user else None,
+        email=email.lower() if email else user.email if user else None,
+        action=action,
+        method=request.method,
+        path=request.url.path,
         status_code=status_code,
         duration_ms=duration_ms,
         ip_address=get_client_ip(request),

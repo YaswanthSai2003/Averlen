@@ -1,3 +1,5 @@
+import time
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from slowapi import Limiter
@@ -11,7 +13,8 @@ from app.core.security import (create_access_token, hash_password,
 from app.db.database import get_session
 from app.db.models import Organization, User
 from app.schemas.auth import Token, UserCreate, UserRead
-from app.services.demo_service import ensure_demo_workspace
+from app.services.audit_service import create_manual_audit_log
+from app.services.demo_service import DEMO_EMAIL, ensure_demo_workspace
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -49,14 +52,28 @@ def build_organization_name(email: str, full_name: str | None) -> str:
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def register_user(
+    request: Request,
     payload: UserCreate,
     session: Session = Depends(get_session),
 ):
+    start_time = time.perf_counter()
+    normalized_email = payload.email.lower().strip()
+
     existing_user = session.exec(
         select(User).where(User.email == payload.email)
     ).first()
 
     if existing_user:
+        create_manual_audit_log(
+            session=session,
+            request=request,
+            action="REGISTER_ATTEMPT",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            email=normalized_email,
+            user=existing_user,
+            duration_ms=round((time.perf_counter() - start_time) * 1000, 2),
+        )
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
@@ -88,6 +105,16 @@ def register_user(
     session.commit()
     session.refresh(user)
 
+    create_manual_audit_log(
+        session=session,
+        request=request,
+        action="REGISTER_ATTEMPT",
+        status_code=status.HTTP_201_CREATED,
+        email=normalized_email,
+        user=user,
+        duration_ms=round((time.perf_counter() - start_time) * 1000, 2),
+    )
+
     return user
 
 
@@ -98,9 +125,22 @@ def login_user(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
 ):
+    start_time = time.perf_counter()
+    normalized_email = form_data.username.lower().strip()
+
     user = session.exec(select(User).where(User.email == form_data.username)).first()
 
     if not user or not verify_password(form_data.password, user.hashed_password):
+        create_manual_audit_log(
+            session=session,
+            request=request,
+            action="LOGIN_ATTEMPT",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            email=normalized_email,
+            user=user,
+            duration_ms=round((time.perf_counter() - start_time) * 1000, 2),
+        )
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -109,15 +149,38 @@ def login_user(
 
     access_token = create_access_token(subject=user.email)
 
+    create_manual_audit_log(
+        session=session,
+        request=request,
+        action="LOGIN_ATTEMPT",
+        status_code=status.HTTP_200_OK,
+        email=normalized_email,
+        user=user,
+        duration_ms=round((time.perf_counter() - start_time) * 1000, 2),
+    )
+
     return Token(access_token=access_token, token_type="bearer")
 
 
 @router.post("/demo-login", response_model=Token)
 def demo_login(
+    request: Request,
     session: Session = Depends(get_session),
 ):
+    start_time = time.perf_counter()
+
     demo_user = ensure_demo_workspace(session)
     access_token = create_access_token(subject=demo_user.email)
+
+    create_manual_audit_log(
+        session=session,
+        request=request,
+        action="DEMO_LOGIN",
+        status_code=status.HTTP_200_OK,
+        email=DEMO_EMAIL,
+        user=demo_user,
+        duration_ms=round((time.perf_counter() - start_time) * 1000, 2),
+    )
 
     return Token(access_token=access_token, token_type="bearer")
 

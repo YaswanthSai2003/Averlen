@@ -9,6 +9,8 @@ __pycache__/
 .env
 .env.local
 .env.docker
+.env.production
+.env.development.local
 
 # Uploads / local files
 uploads/
@@ -16,11 +18,13 @@ uploads/
 *.sqlite
 *.sqlite3
 
-# Node / frontend later
+# Logs
+logs/
+*.log
+
+# Node / frontend
 node_modules/
 dist/
-.env.production
-.env.development.local
 
 # OS / editor
 .DS_Store

@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     rate_limit_enabled: bool = True
+    admin_emails: str = ""
 
     database_url: str = "sqlite:///./pricepilot.db"
     redis_url: str = "redis://localhost:6379/0"

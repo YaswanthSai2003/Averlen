@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, select
 
+from app.core.config import settings
 from app.core.security import decode_access_token
 from app.db.database import get_session
 from app.db.models import User
@@ -38,3 +39,23 @@ def get_current_user(
         )
 
     return user
+
+
+def get_admin_emails() -> set[str]:
+    return {
+        email.strip().lower()
+        for email in settings.admin_emails.split(",")
+        if email.strip()
+    }
+
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    admin_emails = get_admin_emails()
+
+    if current_user.email.lower() not in admin_emails:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+
+    return current_user

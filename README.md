@@ -23,10 +23,11 @@ The application includes a read-only demo workspace with seeded data so the prod
 
 ```mermaid
 flowchart LR
-    U[Browser] --> W[React + Vite]
-    W --> A[FastAPI API]
-    A --> P[(PostgreSQL / Neon)]
-    A --> R[(Redis / Upstash)]
+    U[Browser] --> W["React + Vite<br/>Render Static Site"]
+    W --> A["FastAPI API<br/>Render Web Service"]
+
+    A --> P["PostgreSQL / Neon"]
+    A --> R["Redis / Upstash"]
     A --> C[Cloudinary]
     A --> O[OpenRouter]
 ```

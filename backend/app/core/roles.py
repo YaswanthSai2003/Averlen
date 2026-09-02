@@ -1,0 +1,25 @@
+ORG_ADMIN = "ORG_ADMIN"
+REVENUE_MANAGER = "REVENUE_MANAGER"
+ANALYST = "ANALYST"
+VIEWER = "VIEWER"
+
+VALID_ORG_ROLES = {
+    ORG_ADMIN,
+    REVENUE_MANAGER,
+    ANALYST,
+    VIEWER,
+}
+
+MANAGER_ROLES = {
+    ORG_ADMIN,
+    REVENUE_MANAGER,
+}
+
+READ_ONLY_ROLES = {
+    ANALYST,
+    VIEWER,
+}
+
+
+def is_valid_role(role: str) -> bool:
+    return role in VALID_ORG_ROLES

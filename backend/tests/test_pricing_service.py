@@ -18,6 +18,7 @@ def test_pricing_recommendation_returns_valid_result():
 
     bookings = [
         Booking(
+            organization_id=1,
             property_id=1,
             check_in=date(2025, 3, 1),
             check_out=date(2025, 3, 3),
@@ -32,6 +33,72 @@ def test_pricing_recommendation_returns_valid_result():
     assert result.recommended_price > 0
     assert result.confidence_score >= 0
     assert result.demand_score >= 0
+
+
+def test_pricing_recommendation_contains_explainability_fields():
+    property_obj = Property(
+        id=1,
+        organization_id=1,
+        name="Beach Villa",
+        city="Goa",
+        property_type="Villa",
+        base_price=9000,
+        bedrooms=4,
+        accommodates=8,
+    )
+
+    property_bookings = [
+        Booking(
+            organization_id=1,
+            property_id=1,
+            check_in=date(2025, 3, 1),
+            check_out=date(2025, 3, 4),
+            price=11000,
+            booked_on=date(2025, 2, 20),
+        ),
+        Booking(
+            organization_id=1,
+            property_id=1,
+            check_in=date(2025, 3, 10),
+            check_out=date(2025, 3, 12),
+            price=12000,
+            booked_on=date(2025, 2, 25),
+        ),
+    ]
+
+    city_bookings = property_bookings + [
+        Booking(
+            organization_id=1,
+            property_id=2,
+            check_in=date(2025, 3, 15),
+            check_out=date(2025, 3, 18),
+            price=10000,
+            booked_on=date(2025, 2, 28),
+        )
+    ]
+
+    result = calculate_pricing_recommendation(
+        property_obj=property_obj,
+        property_bookings=property_bookings,
+        city_bookings=city_bookings,
+    )
+
+    assert result.property_average_price == 11500
+    assert result.city_average_price == 11000
+    assert result.booking_volume == 2
+    assert result.city_booking_volume == 3
+    assert result.risk_level in {"low", "medium", "high"}
+    assert result.data_quality in {"no_data", "limited", "moderate", "strong"}
+    assert result.explanation_summary
+    assert len(result.pricing_factors) >= 5
+
+    factor_names = {factor.name for factor in result.pricing_factors}
+
+    assert "Property booking volume" in factor_names
+    assert "Property average booking value" in factor_names
+    assert "City average booking value" in factor_names
+    assert "Demand score" in factor_names
+    assert "Confidence score" in factor_names
 
 
 def test_pricing_endpoint(client, session, auth_headers):
@@ -53,6 +120,7 @@ def test_pricing_endpoint(client, session, auth_headers):
     session.refresh(property_obj)
 
     booking = Booking(
+        organization_id=organization_id,
         property_id=property_obj.id,
         check_in=date(2025, 3, 1),
         check_out=date(2025, 3, 4),
@@ -71,6 +139,11 @@ def test_pricing_endpoint(client, session, auth_headers):
     assert response.status_code == 200
 
     data = response.json()
+
     assert data["property_id"] == property_obj.id
     assert data["recommended_price"] > 0
     assert "reason" in data
+    assert "explanation_summary" in data
+    assert "pricing_factors" in data
+    assert isinstance(data["pricing_factors"], list)
+    assert len(data["pricing_factors"]) >= 5

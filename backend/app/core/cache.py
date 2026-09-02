@@ -41,3 +41,14 @@ def delete_cache(key: str) -> None:
         return
 
     client.delete(key)
+
+
+def delete_cache_pattern(pattern: str) -> None:
+    client = get_redis_client()
+    if not client:
+        return
+
+    keys = list(client.scan_iter(match=pattern))
+
+    if keys:
+        client.delete(*keys)

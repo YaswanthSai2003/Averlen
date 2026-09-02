@@ -30,3 +30,16 @@ def test_upload_preview(client, auth_headers, tmp_path, monkeypatch):
     assert data["filename"] == "sample_bookings.csv"
     assert "property_id" in data["columns"]
     assert len(data["preview_rows"]) == 1
+
+
+def test_download_sample_booking_csv(client):
+    response = client.get("/api/upload/bookings/sample")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert "averlen_sample_bookings.csv" in response.headers["content-disposition"]
+
+    content = response.text
+
+    assert "property_id,check_in,check_out,price,booked_on" in content
+    assert "2026-01-05" in content

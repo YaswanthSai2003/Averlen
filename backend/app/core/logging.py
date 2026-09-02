@@ -12,4 +12,4 @@ def configure_logging() -> None:
     )
 
 
-logger = logging.getLogger("pricepilot")
+logger = logging.getLogger("averlen")

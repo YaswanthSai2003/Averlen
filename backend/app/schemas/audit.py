@@ -16,3 +16,10 @@ class AuditLogRead(SQLModel):
     ip_address: str | None = None
     user_agent: str | None = None
     created_at: datetime
+
+
+class AuditLogPageResponse(SQLModel):
+    items: list[AuditLogRead]
+    total: int
+    limit: int
+    offset: int

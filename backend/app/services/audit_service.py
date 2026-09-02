@@ -40,12 +40,16 @@ def get_user_from_request_token(request: Request, session: Session) -> User | No
             settings.jwt_secret_key,
             algorithms=[settings.jwt_algorithm],
         )
+
+        if payload.get("type") != "access":
+            return None
+
         email = payload.get("sub")
 
         if not email:
             return None
 
-        return session.exec(select(User).where(User.email == email)).first()
+        return session.exec(select(User).where(User.email == email.lower())).first()
 
     except JWTError:
         return None
@@ -91,9 +95,16 @@ def should_skip_middleware_audit(path: str) -> bool:
         "/api/auth/login",
         "/api/auth/register",
         "/api/auth/demo-login",
+        "/api/health",
+        "/healthz",
+        "/readyz",
     }
 
-    return path in skip_paths
+    return path in skip_paths or path.startswith("/uploads/property_photos")
+
+
+def audit_disabled() -> bool:
+    return settings.testing or settings.disable_audit_logs
 
 
 def create_audit_log(
@@ -102,6 +113,9 @@ def create_audit_log(
     status_code: int,
     duration_ms: float,
 ) -> None:
+    if audit_disabled():
+        return
+
     path = request.url.path
 
     if should_skip_middleware_audit(path):
@@ -135,6 +149,9 @@ def create_manual_audit_log(
     user: User | None = None,
     duration_ms: float = 0.0,
 ) -> None:
+    if audit_disabled():
+        return
+
     audit_log = AuditLog(
         user_id=user.id if user else None,
         organization_id=user.organization_id if user else None,

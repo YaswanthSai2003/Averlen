@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Local uploads and generated files
+test_uploads/
+uploads/
+backend/uploads/
+backend/private_uploads/
+backend/public_uploads/
+backend/app/uploads/
+storage/private_uploads/
+storage/public_uploads/
+*.sqlite
+*.sqlite3
+*.db
+*_backup.sql
+
+# Logs
+*.log
+logs/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node / frontend
+node_modules/
+.next/
+out/
+dist/
+build/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

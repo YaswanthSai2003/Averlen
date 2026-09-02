@@ -22,6 +22,7 @@ def test_insights_query_with_fallback(client, session, auth_headers):
     session.refresh(property_obj)
 
     booking = Booking(
+        organization_id=organization_id,
         property_id=property_obj.id,
         check_in=date(2025, 3, 1),
         check_out=date(2025, 3, 5),

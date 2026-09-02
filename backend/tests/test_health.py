@@ -1,10 +1,3 @@
-from fastapi.testclient import TestClient
-
-from app.main import app
-
-client = TestClient(app)
-
-
 def test_health_check(client):
     response = client.get("/api/health")
 

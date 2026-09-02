@@ -1,7 +1,19 @@
 import os
+import shutil
 import uuid
 
+# These must be set BEFORE importing app/settings.
+os.environ["TESTING"] = "true"
 os.environ["RATE_LIMIT_ENABLED"] = "false"
+os.environ["BCRYPT_ROUNDS"] = "4"
+os.environ["DISABLE_AUDIT_LOGS"] = "true"
+os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-pytest-only"
+os.environ["DATABASE_URL"] = "sqlite:///./test_averlen.db"
+os.environ["PRIVATE_UPLOAD_DIR"] = ""
+os.environ["PUBLIC_UPLOAD_DIR"] = "test_uploads/property_photos"
+os.environ["UPLOAD_DIR"] = "test_uploads/private_csv"
+os.environ["PUBLIC_AVATAR_UPLOAD_DIR"] = "test_uploads/user_avatars"
+os.environ["MEDIA_STORAGE_BACKEND"] = "local"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -20,12 +32,32 @@ test_engine = create_engine(
 
 
 @pytest.fixture(autouse=True)
-def disable_external_services(monkeypatch):
+def disable_external_services(monkeypatch, tmp_path):
+    private_upload_dir = tmp_path / "private_csv"
+    public_upload_dir = tmp_path / "property_photos"
+    public_avatar_upload_dir = tmp_path / "user_avatars"
+
+    private_upload_dir.mkdir(parents=True, exist_ok=True)
+    public_upload_dir.mkdir(parents=True, exist_ok=True)
+    public_avatar_upload_dir.mkdir(parents=True, exist_ok=True)
+
+    monkeypatch.setattr(settings, "testing", True)
     monkeypatch.setattr(settings, "redis_url", "redis://localhost:0/0")
-    monkeypatch.setattr(settings, "openai_api_key", "")
+    monkeypatch.setattr(settings, "openrouter_api_key", "")
+    monkeypatch.setattr(settings, "media_storage_backend", "local")
     monkeypatch.setattr(settings, "rate_limit_enabled", False)
+    monkeypatch.setattr(settings, "disable_audit_logs", True)
+    monkeypatch.setattr(settings, "bcrypt_rounds", 4)
+    monkeypatch.setattr(settings, "upload_dir", str(private_upload_dir))
+    monkeypatch.setattr(settings, "private_upload_dir", "")
+    monkeypatch.setattr(settings, "public_upload_dir", str(public_upload_dir))
+    monkeypatch.setattr(settings, "public_avatar_upload_dir", str(public_avatar_upload_dir))
+
     yield
 
+    shutil.rmtree(private_upload_dir, ignore_errors=True)
+    shutil.rmtree(public_upload_dir, ignore_errors=True)
+    shutil.rmtree(public_avatar_upload_dir, ignore_errors=True)
 
 @pytest.fixture()
 def session():
@@ -62,6 +94,8 @@ def auth_headers(client):
             "email": email,
             "password": password,
             "full_name": "Test User",
+            "accepted_terms": True,
+            "accepted_privacy_policy": True,
         },
     )
 

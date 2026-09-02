@@ -1,32 +1,37 @@
 services:
   api:
     build: .
-    container_name: pricepilot-api
+    container_name: averlen-api
     ports:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://averlen:averlen@postgres:5432/averlen
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       - postgres
       - redis
+    volumes:
+      - ./storage/public_uploads:/app/storage/public_uploads
 
   postgres:
     image: postgres:16
-    container_name: pricepilot-postgres
+    container_name: averlen-postgres
     environment:
-      POSTGRES_USER: pricepilot
-      POSTGRES_PASSWORD: pricepilot
-      POSTGRES_DB: pricepilot
+      POSTGRES_USER: averlen
+      POSTGRES_PASSWORD: averlen
+      POSTGRES_DB: averlen
     ports:
       - "5433:5432"
     volumes:
-      - pricepilot_postgres_data:/var/lib/postgresql/data
+      - averlen_postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7
-    container_name: pricepilot-redis
+    container_name: averlen-redis
     ports:
       - "6379:6379"
 
 volumes:
-  pricepilot_postgres_data:
+  averlen_postgres_data:

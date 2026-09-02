@@ -23,6 +23,7 @@ def test_revenue_summary(client, session, auth_headers):
 
     bookings = [
         Booking(
+            organization_id=organization_id,
             property_id=property_obj.id,
             check_in=date(2025, 3, 1),
             check_out=date(2025, 3, 5),
@@ -30,6 +31,7 @@ def test_revenue_summary(client, session, auth_headers):
             booked_on=date(2025, 2, 20),
         ),
         Booking(
+            organization_id=organization_id,
             property_id=property_obj.id,
             check_in=date(2025, 3, 10),
             check_out=date(2025, 3, 12),

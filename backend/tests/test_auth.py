@@ -5,6 +5,8 @@ def test_register_user(client):
             "email": "test@example.com",
             "password": "Test@12345",
             "full_name": "Test User",
+            "accepted_terms": True,
+            "accepted_privacy_policy": True,
         },
     )
 
@@ -24,6 +26,8 @@ def test_login_user(client):
             "email": "login@example.com",
             "password": "Test@12345",
             "full_name": "Login User",
+            "accepted_terms": True,
+            "accepted_privacy_policy": True,
         },
     )
 

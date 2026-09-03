@@ -13,8 +13,11 @@ import {
 
 import {
   Download,
+  Eye,
   FileSpreadsheet,
   History,
+  MoreHorizontal,
+  Undo2,
   Upload,
 } from 'lucide-react'
 
@@ -27,7 +30,7 @@ import {
 } from '../../api/client'
 
 import {
-  getBookingSampleUrl,
+  getBookingSampleCsv,
   getBookingTemplateUrl,
   getImportJob,
   getImportJobErrors,
@@ -35,6 +38,7 @@ import {
   getImportJobsPage,
   previewBookingUpload,
   processBookingUpload,
+  removeImportData,
   type ColumnMappingRequest,
   type CsvPreviewResponse,
 } from '../../api/imports'
@@ -50,6 +54,11 @@ import {
 import {
   Button,
   Card,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   ErrorState,
   Spinner,
 } from '../../components/ui'
@@ -70,6 +79,14 @@ import {
   ImportPreview,
 } from './ImportPreview'
 
+import {
+  PropertyIdReference,
+} from './components/PropertyIdReference'
+
+import {
+  UndoImportDialog,
+} from './components/UndoImportDialog'
+
 
 const MAX_FILE_SIZE =
   5 * 1024 * 1024
@@ -89,6 +106,13 @@ const TERMINAL_JOB_STATUSES =
     'failed',
   ])
 
+
+type UndoImportTarget = {
+  jobId: number
+  importNumber: number
+  filename: string
+  bookingCount: number
+}
 
 function getErrorMessage(
   error: unknown,
@@ -127,6 +151,43 @@ function downloadFile(
 
   anchor.click()
   anchor.remove()
+}
+
+
+function downloadTextFile(
+  filename: string,
+  content: string,
+) {
+  const blob = new Blob(
+    [content],
+    {
+      type: 'text/csv;charset=utf-8',
+    },
+  )
+
+  const objectUrl =
+    URL.createObjectURL(
+      blob,
+    )
+
+  const anchor =
+    document.createElement(
+      'a',
+    )
+
+  anchor.href = objectUrl
+  anchor.download = filename
+
+  document.body.appendChild(
+    anchor,
+  )
+
+  anchor.click()
+  anchor.remove()
+
+  URL.revokeObjectURL(
+    objectUrl,
+  )
 }
 
 
@@ -208,6 +269,13 @@ function getStatusClasses(
         'text-red-700'
       )
 
+    case 'data_removed':
+    case 'reverted':
+      return (
+        'bg-slate-100 ' +
+        'text-slate-600'
+      )
+
     case 'processing':
     case 'pending':
     case 'queued':
@@ -278,6 +346,15 @@ export function ImportsPage() {
       null
     >(null)
 
+  const [
+    undoTarget,
+    setUndoTarget,
+  ] =
+    useState<
+      UndoImportTarget |
+      null
+    >(null)
+
 
   const canUpload =
     user &&
@@ -319,6 +396,35 @@ export function ImportsPage() {
           5,
           0,
         ),
+    })
+
+
+  const sampleDownloadMutation =
+    useMutation({
+      mutationFn:
+        getBookingSampleCsv,
+
+      onSuccess:
+        (csvContent) => {
+          downloadTextFile(
+            'averlen_sample_bookings.csv',
+            csvContent,
+          )
+        },
+
+      onError:
+        (error) => {
+          toast.error(
+            'Unable to download sample data',
+            {
+              description:
+                getErrorMessage(
+                  error,
+                  'Averlen could not generate sample booking data for this workspace.',
+                ),
+            },
+          )
+        },
     })
 
 
@@ -364,6 +470,58 @@ export function ImportsPage() {
             {
               description:
                 'Your booking data is being processed.',
+            },
+          )
+        },
+    })
+
+
+  const removeImportMutation =
+    useMutation({
+      mutationFn:
+        removeImportData,
+
+      onSuccess:
+        async (result) => {
+          setUndoTarget(null)
+
+          await Promise.all([
+            queryClient.invalidateQueries({
+              queryKey: ['imports'],
+            }),
+            queryClient.invalidateQueries({
+              queryKey: ['analytics'],
+            }),
+            queryClient.invalidateQueries({
+              queryKey: ['dashboard'],
+            }),
+            queryClient.invalidateQueries({
+              queryKey: ['pricing'],
+            }),
+            queryClient.invalidateQueries({
+              queryKey: ['properties'],
+            }),
+          ])
+
+          toast.success(
+            'Import reverted',
+            {
+              description:
+                `${result.deleted_bookings} booking${result.deleted_bookings === 1 ? '' : 's'} removed. Workspace metrics have been recalculated.`,
+            },
+          )
+        },
+
+      onError:
+        (error) => {
+          toast.error(
+            'Unable to undo import',
+            {
+              description:
+                getErrorMessage(
+                  error,
+                  'Averlen could not safely undo this import.',
+                ),
             },
           )
         },
@@ -657,6 +815,25 @@ export function ImportsPage() {
     jobQuery.data
 
 
+  const currentHistoryJob =
+    jobId === null
+      ? undefined
+      : jobsQuery.data
+          ?.items
+          .find(
+            (job) =>
+              job.job_id ===
+              jobId,
+          )
+
+
+  function requestUndoImport(
+    target: UndoImportTarget,
+  ) {
+    setUndoTarget(target)
+  }
+
+
   const previewError =
     previewMutation.isError
       ? getErrorMessage(
@@ -706,10 +883,18 @@ export function ImportsPage() {
               variant="secondary"
               size="sm"
               className="w-full sm:w-auto"
+              disabled={
+                propertiesQuery.isLoading ||
+                properties.length === 0 ||
+                sampleDownloadMutation.isPending
+              }
+              title={
+                properties.length === 0
+                  ? 'Create a property before downloading sample data'
+                  : undefined
+              }
               onClick={() => {
-                downloadFile(
-                  getBookingSampleUrl(),
-                )
+                sampleDownloadMutation.mutate()
               }}
             >
               <FileSpreadsheet
@@ -748,6 +933,30 @@ export function ImportsPage() {
             onBackToImports={
               resetImport
             }
+            undoingImport={
+              removeImportMutation.isPending &&
+              removeImportMutation.variables === currentJob.job_id
+            }
+            onUndoImport={
+              canUpload &&
+              currentJob.rollback_available
+                ? () => {
+                    requestUndoImport({
+                      jobId:
+                        currentJob.job_id,
+                      importNumber:
+                        currentJob.import_number,
+                      filename:
+                        currentHistoryJob?.filename ??
+                        selectedFile?.name ??
+                        `Import #${currentJob.import_number}`,
+                      bookingCount:
+                        currentJob.linked_booking_count ??
+                        currentJob.processed_rows,
+                    })
+                  }
+                : undefined
+            }
           />
         ) : preview ? (
           <ImportPreview
@@ -782,6 +991,17 @@ export function ImportsPage() {
             canUpload={
               canUpload
             }
+            propertiesLoading={
+              propertiesQuery.isLoading
+            }
+            hasProperties={
+              properties.length > 0
+            }
+            onAddProperty={() => {
+              navigate(
+                '/app/properties',
+              )
+            }}
             selectedFile={
               selectedFile
             }
@@ -814,6 +1034,19 @@ export function ImportsPage() {
 
 
         {!preview &&
+          !jobId &&
+          properties.length > 0 && (
+          <div className="mt-6">
+            <PropertyIdReference
+              properties={
+                properties
+              }
+            />
+          </div>
+        )}
+
+
+        {!preview &&
           !jobId && (
           <RecentImports
             isLoading={
@@ -834,9 +1067,66 @@ export function ImportsPage() {
             onView={
               openPreviousJob
             }
+            canUndoImport={
+              Boolean(canUpload)
+            }
+            undoingJobId={
+              removeImportMutation.isPending
+                ? removeImportMutation.variables
+                : null
+            }
+            onUndoImport={(job) => {
+              requestUndoImport({
+                jobId:
+                  job.job_id,
+                importNumber:
+                  job.import_number,
+                filename:
+                  job.filename,
+                bookingCount:
+                  job.linked_booking_count ??
+                  job.processed_rows,
+              })
+            }}
           />
         )}
       </div>
+
+
+      <UndoImportDialog
+        open={
+          undoTarget !== null
+        }
+        filename={
+          undoTarget?.filename ??
+          ''
+        }
+        importNumber={
+          undoTarget?.importNumber ??
+          0
+        }
+        bookingCount={
+          undoTarget?.bookingCount ??
+          0
+        }
+        pending={
+          removeImportMutation.isPending
+        }
+        onOpenChange={(open) => {
+          if (!open) {
+            setUndoTarget(null)
+          }
+        }}
+        onConfirm={() => {
+          if (!undoTarget) {
+            return
+          }
+
+          removeImportMutation.mutate(
+            undoTarget.jobId,
+          )
+        }}
+      />
     </div>
   )
 }
@@ -846,6 +1136,12 @@ type UploadPanelProps = {
   readOnly?: boolean
 
   canUpload: boolean
+
+  propertiesLoading: boolean
+
+  hasProperties: boolean
+
+  onAddProperty: () => void
 
   selectedFile:
     File |
@@ -886,6 +1182,9 @@ type UploadPanelProps = {
 function UploadPanel({
   readOnly = false,
   canUpload,
+  propertiesLoading,
+  hasProperties,
+  onAddProperty,
   selectedFile,
   fileError,
   previewError,
@@ -924,12 +1223,44 @@ function UploadPanel({
             import workflow.
           </p>
 
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500">
+            Sample rows are imported as normal booking data and affect
+            workspace analytics. You can remove a tracked import later
+            from Recent imports without deleting the property.
+          </p>
+
 
           {!canUpload ? (
             <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
               {readOnly
                 ? 'The demo workspace can review seeded import history and data quality, but uploading or processing new CSV files is disabled.'
                 : 'Your workspace role can review import history, but only an organization admin or revenue manager can upload booking data.'}
+            </div>
+          ) : propertiesLoading ? (
+            <div className="mt-6 flex min-h-36 items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+              <Spinner />
+            </div>
+          ) : !hasProperties ? (
+            <div className="mt-6 rounded-xl border border-brand-200 bg-brand-50 p-5 sm:p-6">
+              <h3 className="text-sm font-semibold text-slate-950">
+                Create a property first
+              </h3>
+
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Booking records must be linked to a property in your workspace.
+                Add a property before uploading or downloading sample booking data.
+              </p>
+
+              <Button
+                type="button"
+                size="sm"
+                className="mt-4"
+                onClick={
+                  onAddProperty
+                }
+              >
+                Add property
+              </Button>
             </div>
           ) : (
             <>
@@ -1047,7 +1378,7 @@ function UploadPanel({
 
           <div className="mt-5 grid gap-4">
             {[
-              'property_id',
+              'property_code',
               'check_in',
               'check_out',
               'price',
@@ -1090,11 +1421,15 @@ function UploadPanel({
 
 type RecentImportJob = {
   job_id: number
+  import_number: number
   filename: string
   status: string
   total_rows: number
   processed_rows: number
   failed_rows: number
+  data_removed_at?: string | null
+  rollback_available?: boolean
+  linked_booking_count?: number
   created_at:
     string |
     null |
@@ -1111,6 +1446,12 @@ type RecentImportsProps = {
     (
       jobId: number,
     ) => void
+  canUndoImport: boolean
+  undoingJobId: number | null
+  onUndoImport:
+    (
+      job: RecentImportJob,
+    ) => void
 }
 
 
@@ -1120,6 +1461,9 @@ function RecentImports({
   jobs,
   onRetry,
   onView,
+  canUndoImport,
+  undoingJobId,
+  onUndoImport,
 }: RecentImportsProps) {
   return (
     <section className="mt-8">
@@ -1160,9 +1504,7 @@ function RecentImports({
         <Card className="min-w-0 overflow-hidden">
           <div className="grid gap-3 p-4 md:hidden">
             {jobs.map(
-              (
-                job,
-              ) => (
+              (job) => (
                 <article
                   key={
                     job.job_id
@@ -1185,7 +1527,7 @@ function RecentImports({
                       </p>
 
                       <p className="mt-0.5 text-xs text-slate-500">
-                        Job #{job.job_id}
+                        Import #{job.import_number}
                         {' · '}
                         {formatDate(
                           job.created_at,
@@ -1204,13 +1546,17 @@ function RecentImports({
                         font-medium
                         capitalize
                         ${getStatusClasses(
-                          job.status,
+                          job.data_removed_at
+                            ? 'reverted'
+                            : job.status,
                         )}
                       `}
                     >
-                      {formatStatus(
-                        job.status,
-                      )}
+                      {job.data_removed_at
+                        ? 'Reverted'
+                        : formatStatus(
+                            job.status,
+                          )}
                     </span>
                   </div>
 
@@ -1234,7 +1580,9 @@ function RecentImports({
 
                       <dd className="mt-1 text-sm font-medium text-slate-800">
                         {formatNumber(
-                          job.processed_rows,
+                          job.data_removed_at
+                            ? 0
+                            : job.processed_rows,
                         )}
                       </dd>
                     </div>
@@ -1252,18 +1600,64 @@ function RecentImports({
                     </div>
                   </dl>
 
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="mt-4 w-full"
-                    onClick={() => {
-                      onView(
-                        job.job_id,
-                      )
-                    }}
-                  >
-                    View import
-                  </Button>
+                  <div className="mt-4 flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        onView(
+                          job.job_id,
+                        )
+                      }}
+                    >
+                      <Eye
+                        size={15}
+                        aria-hidden="true"
+                      />
+
+                      View import
+                    </Button>
+
+                    {canUndoImport &&
+                      job.rollback_available && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="size-8 px-0"
+                            aria-label={`More actions for Import #${job.import_number}`}
+                            disabled={
+                              undoingJobId ===
+                              job.job_id
+                            }
+                          >
+                            <MoreHorizontal
+                              size={17}
+                              aria-hidden="true"
+                            />
+                          </Button>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            destructive
+                            onSelect={() => {
+                              onUndoImport(job)
+                            }}
+                          >
+                            <Undo2
+                              size={15}
+                              aria-hidden="true"
+                            />
+
+                            Undo import
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
                 </article>
               ),
             )}
@@ -1309,9 +1703,7 @@ function RecentImports({
 
               <tbody>
                 {jobs.map(
-                  (
-                    job,
-                  ) => (
+                  (job) => (
                     <tr
                       key={
                         job.job_id
@@ -1335,10 +1727,7 @@ function RecentImports({
                             </p>
 
                             <p className="mt-0.5 text-xs text-slate-500">
-                              Job #
-                              {
-                                job.job_id
-                              }
+                              Import #{job.import_number}
                             </p>
                           </div>
                         </div>
@@ -1356,13 +1745,17 @@ function RecentImports({
                             font-medium
                             capitalize
                             ${getStatusClasses(
-                              job.status,
+                              job.data_removed_at
+                                ? 'reverted'
+                                : job.status,
                             )}
                           `}
                         >
-                          {formatStatus(
-                            job.status,
-                          )}
+                          {job.data_removed_at
+                            ? 'Reverted'
+                            : formatStatus(
+                                job.status,
+                              )}
                         </span>
                       </td>
 
@@ -1375,7 +1768,9 @@ function RecentImports({
 
                       <TableValue>
                         {formatNumber(
-                          job.processed_rows,
+                          job.data_removed_at
+                            ? 0
+                            : job.processed_rows,
                         )}
                       </TableValue>
 
@@ -1393,18 +1788,76 @@ function RecentImports({
                       </td>
 
 
-                      <td className="px-5 py-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            onView(
-                              job.job_id,
-                            )
-                          }}
-                        >
-                          View
-                        </Button>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              onView(
+                                job.job_id,
+                              )
+                            }}
+                          >
+                            View
+                          </Button>
+
+                          {canUndoImport &&
+                            job.rollback_available && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="size-8 px-0"
+                                  aria-label={`More actions for Import #${job.import_number}`}
+                                  disabled={
+                                    undoingJobId ===
+                                    job.job_id
+                                  }
+                                >
+                                  <MoreHorizontal
+                                    size={17}
+                                    aria-hidden="true"
+                                  />
+                                </Button>
+                              </DropdownMenuTrigger>
+
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onSelect={() => {
+                                    onView(
+                                      job.job_id,
+                                    )
+                                  }}
+                                >
+                                  <Eye
+                                    size={15}
+                                    aria-hidden="true"
+                                  />
+
+                                  View import details
+                                </DropdownMenuItem>
+
+                                <DropdownMenuSeparator />
+
+                                <DropdownMenuItem
+                                  destructive
+                                  onSelect={() => {
+                                    onUndoImport(job)
+                                  }}
+                                >
+                                  <Undo2
+                                    size={15}
+                                    aria-hidden="true"
+                                  />
+
+                                  Undo import
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ),

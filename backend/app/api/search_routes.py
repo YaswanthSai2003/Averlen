@@ -91,6 +91,8 @@ def global_search(
         .where(
             Property.organization_id
             == current_user.organization_id,
+            Property.is_archived
+            == False,  # noqa: E712
             or_(
                 Property.name.ilike(
                     search_text

@@ -149,7 +149,9 @@ def test_upload_template_download(client):
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/csv")
-    assert "property_id,check_in,check_out,price,booked_on" in response.text
+    assert response.text == (
+        "property_code,check_in,check_out,price,booked_on\n"
+    )
 
 
 def test_customer_audit_logs_are_not_exposed(client, auth_headers):

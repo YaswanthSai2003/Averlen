@@ -25,10 +25,10 @@ export const MAPPING_FIELDS:
     {
       key: 'property_id',
 
-      label: 'Property ID',
+      label: 'Property code',
 
       description:
-        'The column containing the Averlen property ID.',
+        'The column containing the Averlen workspace property code.',
 
       aliases: [
         'property_id',

@@ -48,6 +48,23 @@ def register_and_login(client, prefix: str):
     return headers, organization_id, email, login_response
 
 
+
+def _create_active_property(client, auth_headers, prefix: str):
+    response = client.post(
+        "/api/properties",
+        headers=auth_headers,
+        json={
+            "name": f"{prefix} {uuid.uuid4().hex[:8]}",
+            "city": "Bengaluru",
+            "property_type": "Apartment",
+            "base_price": 5000,
+            "bedrooms": 1,
+            "accommodates": 2,
+        },
+    )
+    assert response.status_code == 200, response.text
+    return response.json()
+
 def test_refresh_token_reuse_revokes_all_user_sessions(client, session):
     _, _, _, login_response = register_and_login(client, "reuse_detection")
 
@@ -191,10 +208,11 @@ def test_platform_admin_can_see_all_audit_logs(client, session):
 def test_org_b_cannot_process_org_a_upload_id(client):
     org_a_headers, _, _, _ = register_and_login(client, "upload_org_a")
     org_b_headers, _, _, _ = register_and_login(client, "upload_org_b")
+    org_a_property = _create_active_property(client, org_a_headers, "Org A Property")
 
     csv_content = (
-        "property_id,check_in,check_out,price,booked_on\n"
-        "1,2025-03-01,2025-03-05,5000,2025-02-20\n"
+        "property_code,check_in,check_out,price,booked_on\n"
+        f"{org_a_property['property_code']},2025-03-01,2025-03-05,5000,2025-02-20\n"
     ).encode("utf-8")
 
     preview_response = client.post(
@@ -218,7 +236,7 @@ def test_org_b_cannot_process_org_a_upload_id(client):
         headers=org_b_headers,
         json={
             "upload_id": upload_id,
-            "property_id": "property_id",
+            "property_id": "property_code",
             "check_in": "check_in",
             "check_out": "check_out",
             "price": "price",

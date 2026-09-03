@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   RotateCcw,
+  Undo2,
   XCircle,
 } from 'lucide-react'
 
@@ -31,6 +32,10 @@ type ImportJobResultProps = {
   onStartAnother: () => void
 
   onBackToImports: () => void
+
+  onUndoImport?: () => void
+
+  undoingImport?: boolean
 }
 
 
@@ -107,9 +112,14 @@ export function ImportJobResult({
   onViewAnalytics,
   onStartAnother,
   onBackToImports,
+  onUndoImport,
+  undoingImport = false,
 }: ImportJobResultProps) {
   const status =
     job.status.toLowerCase()
+
+  const dataRemoved =
+    Boolean(job.data_removed_at)
 
   const completed =
     status ===
@@ -182,26 +192,33 @@ export function ImportJobResult({
 
 
             <h2 className="mt-5 text-xl font-semibold tracking-tight text-slate-950">
-              {completed
-                ? 'Import complete'
-                : completedWithErrors
-                  ? 'Import complete with issues'
-                  : failed
-                    ? 'Import failed'
-                    : finalizing
-                      ? 'Finalizing booking data'
-                      : 'Processing booking data'}
+              {dataRemoved
+                ? 'Import reverted'
+                : completed
+                  ? 'Import complete'
+                  : completedWithErrors
+                    ? 'Import complete with issues'
+                    : failed
+                      ? 'Import failed'
+                      : finalizing
+                        ? 'Finalizing booking data'
+                        : 'Processing booking data'}
             </h2>
 
 
             <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-              {completed
+              {dataRemoved
                 ? (
-                    'Your booking data has been processed and ' +
-                    'Averlen analytics can now use the ' +
-                    'imported records.'
+                    'The bookings created by this import were removed. ' +
+                    'Workspace metrics now use the remaining booking data.'
                   )
-                : completedWithErrors
+                : completed
+                  ? (
+                      'Your booking data has been processed and ' +
+                      'Averlen analytics can now use the ' +
+                      'imported records.'
+                    )
+                  : completedWithErrors
                   ? (
                       'The import finished, but some rows were ' +
                       'skipped or require review.'
@@ -288,7 +305,9 @@ export function ImportJobResult({
             <Metric
               label="Imported"
               value={
-                job.processed_rows
+                dataRemoved
+                  ? 0
+                  : job.processed_rows
               }
             />
 
@@ -327,31 +346,65 @@ export function ImportJobResult({
 
 
           {finished && (
-            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
-              <Button
-                variant="secondary"
-                onClick={
-                  onStartAnother
-                }
-              >
-                <RotateCcw
-                  size={16}
-                  aria-hidden="true"
-                />
-
-                Import another file
-              </Button>
-
-
-              {(completed ||
-                completedWithErrors) && (
+            <div className="mt-8">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
                 <Button
+                  variant="secondary"
                   onClick={
-                    onViewAnalytics
+                    onStartAnother
                   }
                 >
-                  View analytics
+                  <RotateCcw
+                    size={16}
+                    aria-hidden="true"
+                  />
+
+                  Import another file
                 </Button>
+
+                {(completed ||
+                  completedWithErrors) && (
+                  <Button
+                    onClick={
+                      onViewAnalytics
+                    }
+                  >
+                    View analytics
+                  </Button>
+                )}
+              </div>
+
+              {!dataRemoved &&
+                job.rollback_available &&
+                onUndoImport && (
+                <div className="mt-3 flex justify-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-danger-700 hover:bg-danger-50"
+                    disabled={undoingImport}
+                    onClick={onUndoImport}
+                  >
+                    <Undo2
+                      size={15}
+                      aria-hidden="true"
+                    />
+
+                    {undoingImport
+                      ? 'Undoing import…'
+                      : 'Undo import'}
+                  </Button>
+                </div>
+              )}
+
+              {!dataRemoved &&
+                finished &&
+                !failed &&
+                job.processed_rows > 0 &&
+                !job.rollback_available && (
+                <p className="mx-auto mt-4 max-w-xl text-center text-xs leading-5 text-slate-500">
+                  Undo is unavailable for this legacy import because it was created before rollback tracking was enabled.
+                </p>
               )}
             </div>
           )}

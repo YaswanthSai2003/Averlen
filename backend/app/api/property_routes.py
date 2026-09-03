@@ -15,9 +15,18 @@ from sqlalchemy import and_, func
 from sqlmodel import Session, select
 
 from app.api.deps import get_current_user, require_writable_manager
+from app.core.cache import delete_cache_pattern
 from app.core.config import settings
 from app.db.database import get_session
-from app.db.models import Booking, Property, User
+from app.db.models import (
+    Booking,
+    IngestionJob,
+    Notification,
+    Organization,
+    PricingRecommendationHistory,
+    Property,
+    User,
+)
 from app.schemas.property import (
     PropertyCreate,
     PropertyListResponse,
@@ -85,6 +94,15 @@ def detect_image_extension(
         return ".webp"
 
     return None
+
+
+def clear_property_analytics_cache(
+    organization_id: int,
+) -> None:
+    delete_cache_pattern(
+        f"analytics:*:org:{organization_id}*"
+    )
+
 
 
 def find_property_by_name(
@@ -212,6 +230,7 @@ def apply_property_filters(
     statement,
     city: Optional[str],
     property_type: Optional[str],
+    archived: bool = False,
 ):
     if city:
         statement = statement.where(
@@ -224,6 +243,11 @@ def apply_property_filters(
             == property_type
         )
 
+    statement = statement.where(
+        Property.is_archived
+        == archived
+    )
+
     return statement
 
 
@@ -231,6 +255,7 @@ def build_property_statement(
     organization_id: int,
     city: Optional[str] = None,
     property_type: Optional[str] = None,
+    archived: bool = False,
 ):
     statement = select(
         Property
@@ -243,6 +268,7 @@ def build_property_statement(
         statement,
         city,
         property_type,
+        archived,
     )
 
     return statement.order_by(
@@ -257,6 +283,7 @@ def build_property_count_statement(
     organization_id: int,
     city: Optional[str] = None,
     property_type: Optional[str] = None,
+    archived: bool = False,
 ):
     statement = select(
         func.count(
@@ -271,6 +298,7 @@ def build_property_count_statement(
         statement,
         city,
         property_type,
+        archived,
     )
 
 
@@ -280,6 +308,7 @@ def build_property_summary_statement(
     property_type: Optional[str],
     sort_by: PropertySortField,
     sort_order: SortOrder,
+    archived: bool = False,
 ):
     total_revenue = func.coalesce(
         func.sum(
@@ -322,6 +351,7 @@ def build_property_summary_statement(
         statement,
         city,
         property_type,
+        archived,
     )
 
     sort_expressions = {
@@ -439,6 +469,9 @@ def build_property_summaries(
                 property_id=(
                     property_obj.id
                 ),
+                property_code=(
+                    property_obj.property_code
+                ),
                 name=(
                     property_obj.name
                 ),
@@ -464,6 +497,12 @@ def build_property_summaries(
                 photo_url=(
                     property_obj
                     .photo_url
+                ),
+                is_archived=(
+                    property_obj.is_archived
+                ),
+                archived_at=(
+                    property_obj.archived_at
                 ),
                 total_revenue=round(
                     total_revenue,
@@ -532,13 +571,41 @@ def create_property(
             ),
         )
 
+    organization = session.exec(
+        select(Organization)
+        .where(
+            Organization.id
+            == current_user.organization_id
+        )
+        .with_for_update()
+    ).first()
+
+    if not organization:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Organization not found",
+        )
+
+    property_number = max(
+        1,
+        organization.next_property_number,
+    )
+
     db_property = Property(
         organization_id=(
             current_user.organization_id
         ),
+        property_code=(
+            f"P-{property_number:03d}"
+        ),
         **property_data.model_dump(),
     )
 
+    organization.next_property_number = (
+        property_number + 1
+    )
+
+    session.add(organization)
     session.add(
         db_property
     )
@@ -565,6 +632,7 @@ def list_properties(
     ),
     city: Optional[str] = None,
     property_type: Optional[str] = None,
+    archived: bool = Query(default=False),
     limit: int = Query(
         default=10,
         ge=1,
@@ -584,6 +652,7 @@ def list_properties(
             property_type=(
                 property_type
             ),
+            archived=archived,
         )
     )
 
@@ -609,6 +678,7 @@ def list_properties_page(
     ),
     city: Optional[str] = None,
     property_type: Optional[str] = None,
+    archived: bool = Query(default=False),
     limit: int = Query(
         default=10,
         ge=1,
@@ -628,6 +698,7 @@ def list_properties_page(
             property_type=(
                 property_type
             ),
+            archived=archived,
         )
     ).one()
 
@@ -640,6 +711,7 @@ def list_properties_page(
             property_type=(
                 property_type
             ),
+            archived=archived,
         )
     )
 
@@ -672,6 +744,7 @@ def list_property_summaries(
     ),
     city: Optional[str] = None,
     property_type: Optional[str] = None,
+    archived: bool = Query(default=False),
     sort_by: PropertySortField = Query(
         default="name"
     ),
@@ -699,6 +772,7 @@ def list_property_summaries(
             ),
             sort_by=sort_by,
             sort_order=sort_order,
+            archived=archived,
         )
     )
 
@@ -730,6 +804,7 @@ def list_property_summaries_page(
     ),
     city: Optional[str] = None,
     property_type: Optional[str] = None,
+    archived: bool = Query(default=False),
     sort_by: PropertySortField = Query(
         default="name"
     ),
@@ -755,6 +830,7 @@ def list_property_summaries_page(
             property_type=(
                 property_type
             ),
+            archived=archived,
         )
     ).one()
 
@@ -769,6 +845,7 @@ def list_property_summaries_page(
             ),
             sort_by=sort_by,
             sort_order=sort_order,
+            archived=archived,
         )
     )
 
@@ -1009,6 +1086,172 @@ def upload_property_photo(
     return property_obj
 
 
+@router.patch(
+    "/{property_id}/archive",
+    response_model=PropertyRead,
+)
+def archive_property(
+    property_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_writable_manager),
+):
+    property_obj = get_org_property_or_404(
+        session=session,
+        property_id=property_id,
+        organization_id=current_user.organization_id,
+    )
+
+    if not property_obj.is_archived:
+        property_obj.is_archived = True
+        property_obj.archived_at = datetime.now(timezone.utc)
+        property_obj.updated_at = datetime.now(timezone.utc)
+        session.add(property_obj)
+        session.commit()
+        session.refresh(property_obj)
+        clear_property_analytics_cache(
+            current_user.organization_id
+        )
+
+    return property_obj
+
+
+@router.patch(
+    "/{property_id}/restore",
+    response_model=PropertyRead,
+)
+def restore_property(
+    property_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_writable_manager),
+):
+    property_obj = get_org_property_or_404(
+        session=session,
+        property_id=property_id,
+        organization_id=current_user.organization_id,
+    )
+
+    if property_obj.is_archived:
+        property_obj.is_archived = False
+        property_obj.archived_at = None
+        property_obj.updated_at = datetime.now(timezone.utc)
+        session.add(property_obj)
+        session.commit()
+        session.refresh(property_obj)
+        clear_property_analytics_cache(
+            current_user.organization_id
+        )
+
+    return property_obj
+
+
+@router.delete("/{property_id}/permanent")
+def permanently_delete_property(
+    property_id: int,
+    confirm: str = Query(...),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_writable_manager),
+):
+    if confirm != "DELETE":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Pass confirm=DELETE to permanently delete this property',
+        )
+
+    property_obj = get_org_property_or_404(
+        session=session,
+        property_id=property_id,
+        organization_id=current_user.organization_id,
+    )
+
+    bookings = list(
+        session.exec(
+            select(Booking).where(
+                Booking.property_id == property_id,
+            )
+        ).all()
+    )
+
+    pricing_history = list(
+        session.exec(
+            select(PricingRecommendationHistory).where(
+                PricingRecommendationHistory.organization_id
+                == current_user.organization_id,
+                PricingRecommendationHistory.property_id == property_id,
+            )
+        ).all()
+    )
+
+    notifications = list(
+        session.exec(
+            select(Notification).where(
+                Notification.organization_id == current_user.organization_id,
+                Notification.entity_type == "property",
+                Notification.entity_id == property_id,
+            )
+        ).all()
+    )
+
+    old_photo_url = property_obj.photo_url
+    source_job_ids = {
+        booking.ingestion_job_id
+        for booking in bookings
+        if booking.ingestion_job_id is not None
+    }
+
+    for booking in bookings:
+        session.delete(booking)
+
+    # Flush booking deletes before checking whether an import
+    # still has any surviving booking rows for other properties.
+    session.flush()
+
+    now = datetime.now(timezone.utc)
+    for source_job_id in source_job_ids:
+        remaining_booking_id = session.exec(
+            select(Booking.id)
+            .where(Booking.ingestion_job_id == source_job_id)
+            .limit(1)
+        ).first()
+
+        if remaining_booking_id is None:
+            source_job = session.get(
+                IngestionJob,
+                source_job_id,
+            )
+            if (
+                source_job is not None
+                and source_job.organization_id
+                == current_user.organization_id
+            ):
+                source_job.data_removed_at = now
+                session.add(source_job)
+
+    for history_item in pricing_history:
+        session.delete(history_item)
+
+    for notification in notifications:
+        session.delete(notification)
+
+    session.delete(property_obj)
+    session.commit()
+
+    clear_property_analytics_cache(
+        current_user.organization_id
+    )
+
+    delete_public_image(
+        old_photo_url,
+        local_directory=settings.public_upload_dir,
+        local_url_prefix="/uploads/property_photos",
+    )
+
+    return {
+        "message": "Property and associated data deleted",
+        "deleted_bookings": len(bookings),
+        "deleted_pricing_history": len(pricing_history),
+    }
+
+
 @router.delete("/{property_id}")
 def delete_property(
     property_id: int,
@@ -1024,8 +1267,6 @@ def delete_property(
     existing_booking = session.exec(
         select(Booking.id)
         .where(
-            Booking.organization_id
-            == current_user.organization_id,
             Booking.property_id
             == property_id,
         )

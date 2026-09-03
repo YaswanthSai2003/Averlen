@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from pydantic import field_validator
@@ -50,6 +51,7 @@ class PropertyCreate(SQLModel):
 class PropertyRead(SQLModel):
     id: int
     organization_id: int
+    property_code: str
     name: str
     city: str
     property_type: str
@@ -57,6 +59,8 @@ class PropertyRead(SQLModel):
     bedrooms: int
     accommodates: int
     photo_url: Optional[str] = None
+    is_archived: bool = False
+    archived_at: Optional[datetime] = None
 
 
 class PropertyUpdate(SQLModel):
@@ -107,6 +111,7 @@ class PropertyUpdate(SQLModel):
 
 class PropertySummary(SQLModel):
     property_id: int
+    property_code: str
     name: str
     city: str
     property_type: str
@@ -114,6 +119,8 @@ class PropertySummary(SQLModel):
     bedrooms: int
     accommodates: int
     photo_url: Optional[str] = None
+    is_archived: bool = False
+    archived_at: Optional[datetime] = None
     total_revenue: float
     total_bookings: int
     total_booked_nights: int

@@ -15,15 +15,15 @@ import { useForm } from 'react-hook-form'
 
 import type {
   PropertySummary,
-} from '../../api/properties'
-import { buildApiUrl } from '../../api/client'
+} from '../../../api/properties'
+import { buildApiUrl } from '../../../api/client'
 import {
   Button,
   DialogFooter,
   Input,
   Select,
   Spinner,
-} from '../../components/ui'
+} from '../../../components/ui'
 
 import {
   CREATE_PROPERTY_DEFAULTS,
@@ -32,7 +32,7 @@ import {
   propertyFormSchema,
   validatePropertyPhoto,
   type PropertyFormValues,
-} from './property-form'
+} from '../utils/propertyForm'
 
 type PropertyFormProps = {
   mode: 'create' | 'edit'

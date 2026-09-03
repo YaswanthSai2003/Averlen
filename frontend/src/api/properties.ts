@@ -11,6 +11,9 @@ const propertyReadSchema =
     organization_id:
       z.number(),
 
+    property_code:
+      z.string(),
+
     name: z.string(),
 
     city: z.string(),
@@ -31,12 +34,25 @@ const propertyReadSchema =
       z.string()
         .nullable()
         .optional(),
+
+    is_archived:
+      z.boolean()
+        .optional()
+        .default(false),
+
+    archived_at:
+      z.string()
+        .nullable()
+        .optional(),
   })
 
 const propertySummarySchema =
   z.object({
     property_id:
       z.number(),
+
+    property_code:
+      z.string(),
 
     name:
       z.string(),
@@ -57,6 +73,16 @@ const propertySummarySchema =
       z.number(),
 
     photo_url:
+      z.string()
+        .nullable()
+        .optional(),
+
+    is_archived:
+      z.boolean()
+        .optional()
+        .default(false),
+
+    archived_at:
       z.string()
         .nullable()
         .optional(),
@@ -139,6 +165,7 @@ export type UpdatePropertyPayload =
 type PropertySummaryOptions = {
   city?: string
   propertyType?: string
+  archived?: boolean
   sortBy?: PropertySortField
   sortOrder?: SortOrder
 }
@@ -172,6 +199,14 @@ export async function getPropertySummaryPage(
       options.city,
     )
   }
+
+  params.set(
+    'archived',
+    String(
+      options.archived ??
+      false,
+    ),
+  )
 
   if (
     options.propertyType
@@ -270,11 +305,39 @@ export async function uploadPropertyPhoto(
   )
 }
 
+export async function archiveProperty(
+  propertyId: number,
+): Promise<PropertyRead> {
+  const raw =
+    await apiRequest<unknown>(
+      `/api/properties/${propertyId}/archive`,
+      {
+        method: 'PATCH',
+      },
+    )
+
+  return propertyReadSchema.parse(raw)
+}
+
+export async function restoreProperty(
+  propertyId: number,
+): Promise<PropertyRead> {
+  const raw =
+    await apiRequest<unknown>(
+      `/api/properties/${propertyId}/restore`,
+      {
+        method: 'PATCH',
+      },
+    )
+
+  return propertyReadSchema.parse(raw)
+}
+
 export async function deleteProperty(
   propertyId: number,
 ): Promise<void> {
   await apiRequest(
-    `/api/properties/${propertyId}`,
+    `/api/properties/${propertyId}/permanent?confirm=DELETE`,
     {
       method: 'DELETE',
     },

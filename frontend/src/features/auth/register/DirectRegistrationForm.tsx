@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 
 import {
+  Link,
   useNavigate,
 } from 'react-router'
 
@@ -41,7 +42,6 @@ import {
 
 import {
   Button,
-  Checkbox,
   Input,
   Spinner,
 } from '../../../components/ui'
@@ -720,27 +720,81 @@ export function DirectRegistrationForm() {
           />
 
           <div className="grid gap-3 pt-1">
-            <Checkbox
-              label="I agree to the Terms of Service."
-              error={
-                securityForm.formState.errors.acceptedTerms
-                  ?.message
-              }
-              {...securityForm.register(
-                'acceptedTerms',
-              )}
-            />
+            <div>
+              <div className="flex items-start gap-3">
+                <input
+                  id="accepted-terms"
+                  type="checkbox"
+                  className="mt-1 size-4 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  {...securityForm.register(
+                    'acceptedTerms',
+                  )}
+                />
 
-            <Checkbox
-              label="I agree to the Privacy Policy."
-              error={
-                securityForm.formState.errors.acceptedPrivacy
-                  ?.message
-              }
-              {...securityForm.register(
-                'acceptedPrivacy',
+                <p className="text-sm leading-6 text-slate-700">
+                  <label
+                    htmlFor="accepted-terms"
+                    className="cursor-pointer"
+                  >
+                    I agree to the{' '}
+                  </label>
+
+                  <Link
+                    to="/terms"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-brand-700 underline-offset-4 transition hover:text-brand-800 hover:underline"
+                  >
+                    Terms of Service
+                  </Link>
+                  .
+                </p>
+              </div>
+
+              {securityForm.formState.errors.acceptedTerms?.message && (
+                <p className="mt-1 pl-7 text-xs text-danger-600">
+                  {securityForm.formState.errors.acceptedTerms.message}
+                </p>
               )}
-            />
+            </div>
+
+            <div>
+              <div className="flex items-start gap-3">
+                <input
+                  id="accepted-privacy"
+                  type="checkbox"
+                  className="mt-1 size-4 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  {...securityForm.register(
+                    'acceptedPrivacy',
+                  )}
+                />
+
+                <p className="text-sm leading-6 text-slate-700">
+                  <label
+                    htmlFor="accepted-privacy"
+                    className="cursor-pointer"
+                  >
+                    I agree to the{' '}
+                  </label>
+
+                  <Link
+                    to="/privacy"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-brand-700 underline-offset-4 transition hover:text-brand-800 hover:underline"
+                  >
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
+              </div>
+
+              {securityForm.formState.errors.acceptedPrivacy?.message && (
+                <p className="mt-1 pl-7 text-xs text-danger-600">
+                  {securityForm.formState.errors.acceptedPrivacy.message}
+                </p>
+              )}
+            </div>
           </div>
 
           <Button

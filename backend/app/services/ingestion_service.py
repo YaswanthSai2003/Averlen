@@ -625,15 +625,26 @@ def process_csv_job(
                     select(
                         Property,
                     ).where(
-                        Property
-                        .organization_id
-                        == organization_id
+                        Property.organization_id
+                        == organization_id,
+                        Property.is_archived
+                        == False,  # noqa: E712
                     )
                 ).all()
             )
 
             valid_property_ids = {
                 property_obj.id
+                for property_obj
+                in organization_properties
+                if property_obj.id
+                is not None
+            }
+
+            property_code_map = {
+                property_obj.property_code
+                .strip()
+                .upper(): property_obj.id
                 for property_obj
                 in organization_properties
                 if property_obj.id
@@ -721,19 +732,42 @@ def process_csv_job(
                 )
 
                 try:
-                    property_id = int(
+                    raw_property_reference = str(
                         row[
                             mapping[
                                 "property_id"
                             ]
                         ]
+                    ).strip()
+
+                    property_id = property_code_map.get(
+                        raw_property_reference.upper()
                     )
 
-                    if (
-                        property_id
-                        not in
-                        valid_property_ids
-                    ):
+                    # Backward compatibility for CSVs that still
+                    # contain the old numeric database property id.
+                    if property_id is None:
+                        try:
+                            legacy_property_id = int(
+                                float(
+                                    raw_property_reference
+                                )
+                            )
+                        except (
+                            TypeError,
+                            ValueError,
+                        ):
+                            legacy_property_id = None
+
+                        if (
+                            legacy_property_id
+                            in valid_property_ids
+                        ):
+                            property_id = (
+                                legacy_property_id
+                            )
+
+                    if property_id is None:
                         ingestion_errors.append(
                             create_ingestion_error(
                                 job_id=job_id,
@@ -744,10 +778,8 @@ def process_csv_job(
                                     row_number
                                 ),
                                 error_message=(
-                                    "Invalid "
-                                    "property_id "
-                                    "for this "
-                                    "organization"
+                                    "Invalid property reference "
+                                    "for this workspace"
                                 ),
                                 raw_data=(
                                     raw_data
@@ -884,6 +916,9 @@ def process_csv_job(
                         ),
                         property_id=(
                             property_id
+                        ),
+                        ingestion_job_id=(
+                            job_id
                         ),
                         check_in=(
                             check_in

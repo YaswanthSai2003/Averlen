@@ -30,6 +30,7 @@ export type IngestionResponse = {
 
 export type JobStatusResponse = {
   job_id: number
+  import_number: number
   status: string
   total_rows: number
   processed_rows: number
@@ -41,12 +42,17 @@ export type JobStatusResponse = {
   error_message?: string | null
   error_summary?: string | null
 
+  data_removed_at?: string | null
+  rollback_available?: boolean
+  linked_booking_count?: number
+
   created_at?: string | null
   completed_at?: string | null
 }
 
 export type IngestionJobRead = {
   job_id: number
+  import_number: number
   organization_id: number
   user_id?: number | null
 
@@ -62,6 +68,10 @@ export type IngestionJobRead = {
 
   error_message?: string | null
   error_summary?: string | null
+
+  data_removed_at?: string | null
+  rollback_available?: boolean
+  linked_booking_count?: number
 
   created_at: string
   completed_at?: string | null
@@ -182,14 +192,31 @@ export async function getImportJobQuality(
   )
 }
 
+export async function removeImportData(
+  jobId: number,
+): Promise<{
+  message: string
+  deleted_bookings: number
+}> {
+  return apiRequest<{
+    message: string
+    deleted_bookings: number
+  }>(
+    `/api/upload/jobs/${jobId}/data`,
+    {
+      method: 'DELETE',
+    },
+  )
+}
+
 export function getBookingTemplateUrl() {
   return buildApiUrl(
     '/api/upload/bookings/template',
   )
 }
 
-export function getBookingSampleUrl() {
-  return buildApiUrl(
+export async function getBookingSampleCsv() {
+  return apiRequest<string>(
     '/api/upload/bookings/sample',
   )
 }

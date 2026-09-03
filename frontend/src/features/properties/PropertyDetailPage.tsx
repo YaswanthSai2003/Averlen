@@ -57,11 +57,11 @@ import {
 
 import {
   EditPropertyDialog,
-} from './PropertyDialogs'
+} from './components'
 import {
   toPropertyPayload,
   type PropertyFormValues,
-} from './property-form'
+} from './utils/propertyForm'
 
 
 function PropertyDetailLoading() {
@@ -335,7 +335,7 @@ export function PropertyDetailPage() {
             title={
               property.name
             }
-            description={`${property.city} · ${property.property_type}`}
+            description={`${property.property_code} · ${property.city} · ${property.property_type}`}
             actions={
               <div className="flex flex-wrap gap-2">
                 {canManage && (

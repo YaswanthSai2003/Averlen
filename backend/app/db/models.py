@@ -1,4 +1,5 @@
 from datetime import date, datetime, timezone
+import uuid
 from typing import Optional
 
 from sqlalchemy import DateTime, Index
@@ -17,6 +18,8 @@ class Organization(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     email_domain: Optional[str] = Field(default=None, index=True, unique=True)
+    next_property_number: int = 1
+    next_import_number: int = 1
     created_at: datetime = Field(default_factory=utc_now)
 
 
@@ -44,10 +47,22 @@ class Property(SQLModel, table=True):
     __tablename__ = "property"
     __table_args__ = (
         Index("ix_property_org_name", "organization_id", "name"),
+        Index(
+            "ux_property_org_code",
+            "organization_id",
+            "property_code",
+            unique=True,
+        ),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     organization_id: int = Field(foreign_key="organizations.id", index=True)
+    property_code: str = Field(
+        default_factory=lambda: (
+            f"P-{uuid.uuid4().hex[:8].upper()}"
+        ),
+        index=True,
+    )
 
     name: str
     city: str = Field(index=True)
@@ -56,6 +71,8 @@ class Property(SQLModel, table=True):
     bedrooms: int
     accommodates: int
     photo_url: Optional[str] = None
+    is_archived: bool = Field(default=False, index=True)
+    archived_at: Optional[datetime] = None
 
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
@@ -82,6 +99,11 @@ class Booking(SQLModel, table=True):
     )
 
     property_id: int = Field(foreign_key="property.id", index=True)
+    ingestion_job_id: Optional[int] = Field(
+        default=None,
+        foreign_key="ingestionjob.id",
+        index=True,
+    )
     check_in: date = Field(index=True)
     check_out: date
     price: float
@@ -92,10 +114,19 @@ class Booking(SQLModel, table=True):
 
 class IngestionJob(SQLModel, table=True):
     __tablename__ = "ingestionjob"
+    __table_args__ = (
+        Index(
+            "ux_ingestionjob_org_number",
+            "organization_id",
+            "import_number",
+            unique=True,
+        ),
+    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     organization_id: int = Field(foreign_key="organizations.id", index=True)
     user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
+    import_number: int = Field(default=1, index=True)
 
     filename: str
     status: str = Field(default="pending", index=True)
@@ -106,6 +137,7 @@ class IngestionJob(SQLModel, table=True):
     duplicate_rows: int = 0
     error_message: Optional[str] = None
     error_summary: Optional[str] = None
+    data_removed_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=utc_now)
     completed_at: Optional[datetime] = None
 

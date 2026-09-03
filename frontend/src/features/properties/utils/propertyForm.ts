@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type {
   CreatePropertyPayload,
   PropertySummary,
-} from '../../api/properties'
+} from '../../../api/properties'
 
 export const MAX_PROPERTY_PHOTO_SIZE = 5 * 1024 * 1024
 

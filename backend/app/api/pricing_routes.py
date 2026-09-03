@@ -34,9 +34,16 @@ def calculate_property_recommendation(
     if not property_obj or property_obj.organization_id != current_user.organization_id:
         raise HTTPException(status_code=404, detail="Property not found")
 
+    if property_obj.is_archived:
+        raise HTTPException(
+            status_code=409,
+            detail="Archived properties cannot receive new pricing recommendations",
+        )
+
     properties = session.exec(
         select(Property).where(
-            Property.organization_id == current_user.organization_id
+            Property.organization_id == current_user.organization_id,
+            Property.is_archived == False,  # noqa: E712
         )
     ).all()
 

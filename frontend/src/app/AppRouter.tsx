@@ -35,6 +35,11 @@ import {
 } from '../features/internal/InternalLayout'
 
 
+import {
+  PrivacyPage,
+  TermsPage,
+} from '../features/legal'
+
 const LoginPage =
   lazy(
     () =>
@@ -376,6 +381,22 @@ export function AppRouter() {
             to="/app/overview"
             replace
           />
+        }
+      />
+
+
+      <Route
+        path="/terms"
+        element={
+          <TermsPage />
+        }
+      />
+
+
+      <Route
+        path="/privacy"
+        element={
+          <PrivacyPage />
         }
       />
 

@@ -44,6 +44,7 @@ class IngestionResponse(SQLModel):
 
 class JobStatusResponse(SQLModel):
     job_id: int
+    import_number: int
     status: str
     total_rows: int
     processed_rows: int
@@ -52,6 +53,9 @@ class JobStatusResponse(SQLModel):
     duplicate_rows: int = 0
     error_message: str | None = None
     error_summary: str | None = None
+    data_removed_at: datetime | None = None
+    rollback_available: bool = False
+    linked_booking_count: int = 0
     created_at: datetime | None = None
     completed_at: datetime | None = None
 
@@ -71,6 +75,7 @@ class IngestionErrorListResponse(SQLModel):
 
 class IngestionJobRead(SQLModel):
     job_id: int
+    import_number: int
     organization_id: int
     user_id: int | None = None
     filename: str
@@ -82,6 +87,9 @@ class IngestionJobRead(SQLModel):
     duplicate_rows: int = 0
     error_message: str | None = None
     error_summary: str | None = None
+    data_removed_at: datetime | None = None
+    rollback_available: bool = False
+    linked_booking_count: int = 0
     created_at: datetime
     completed_at: datetime | None = None
 

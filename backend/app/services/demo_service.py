@@ -284,7 +284,10 @@ def get_or_create_demo_properties(
 ) -> dict[str, Property]:
     property_map = {}
 
-    for property_data in DEMO_PROPERTIES:
+    for property_index, property_data in enumerate(
+        DEMO_PROPERTIES,
+        start=1,
+    ):
         existing_property = session.exec(
             select(Property).where(
                 Property.organization_id == organization_id,
@@ -293,6 +296,11 @@ def get_or_create_demo_properties(
         ).first()
 
         if existing_property:
+            existing_property.property_code = (
+                f"P-{property_index:03d}"
+            )
+            existing_property.is_archived = False
+            existing_property.archived_at = None
             existing_property.city = property_data["city"]
             existing_property.property_type = property_data["property_type"]
             existing_property.base_price = property_data["base_price"]
@@ -310,6 +318,9 @@ def get_or_create_demo_properties(
 
         property_obj = Property(
             organization_id=organization_id,
+            property_code=(
+                f"P-{property_index:03d}"
+            ),
             **property_data,
         )
 
@@ -387,6 +398,7 @@ def seed_demo_upload_job_if_needed(
     job = IngestionJob(
         organization_id=organization_id,
         user_id=user_id,
+        import_number=1,
         filename="averlen_demo_bookings.csv",
         status="completed",
         total_rows=len(DEMO_BOOKINGS),

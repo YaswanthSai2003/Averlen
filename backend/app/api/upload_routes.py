@@ -1,4 +1,7 @@
+import csv
 from contextlib import nullcontext
+from datetime import date, datetime, timedelta, timezone
+from io import StringIO
 
 from fastapi import (
     APIRouter,
@@ -24,8 +27,11 @@ from app.db.database import (
     get_session,
 )
 from app.db.models import (
+    Booking,
     IngestionError,
     IngestionJob,
+    Organization,
+    Property,
     User,
 )
 from app.schemas.upload import (
@@ -41,6 +47,7 @@ from app.schemas.upload import (
     JobStatusResponse,
 )
 from app.services.ingestion_service import (
+    clear_analytics_cache,
     get_upload_session_or_404,
     preview_csv,
     process_csv_job,
@@ -84,8 +91,8 @@ def categorize_error_message(
         return "duplicate"
 
     if (
-        "invalid property_id"
-        in message
+        "invalid property_id" in message
+        or "invalid property reference" in message
     ):
         return "invalid_property"
 
@@ -212,6 +219,7 @@ def get_effective_failed_rows(
 def build_job_read(
     job: IngestionJob,
     failed_rows: int | None = None,
+    linked_booking_count: int = 0,
 ) -> IngestionJobRead:
     effective_failed_rows = (
         job.failed_rows
@@ -221,6 +229,7 @@ def build_job_read(
 
     return IngestionJobRead(
         job_id=job.id,
+        import_number=job.import_number,
         organization_id=(
             job.organization_id
         ),
@@ -256,11 +265,50 @@ def build_job_read(
                 effective_failed_rows,
             )
         ),
+        data_removed_at=job.data_removed_at,
+        rollback_available=(
+            job.data_removed_at is None
+            and linked_booking_count > 0
+        ),
+        linked_booking_count=linked_booking_count,
         created_at=job.created_at,
         completed_at=(
             job.completed_at
         ),
     )
+
+
+def build_linked_booking_count_map(
+    session: Session,
+    jobs: list[IngestionJob],
+    organization_id: int,
+) -> dict[int, int]:
+    job_ids = [
+        job.id
+        for job in jobs
+        if job.id is not None
+    ]
+
+    if not job_ids:
+        return {}
+
+    rows = session.exec(
+        select(
+            Booking.ingestion_job_id,
+            func.count(Booking.id),
+        )
+        .where(
+            Booking.organization_id == organization_id,
+            Booking.ingestion_job_id.in_(job_ids),
+        )
+        .group_by(Booking.ingestion_job_id)
+    ).all()
+
+    return {
+        int(job_id): int(count)
+        for job_id, count in rows
+        if job_id is not None
+    }
 
 
 def build_failed_count_map(
@@ -627,12 +675,12 @@ def build_data_quality_report(
     "/bookings/template",
 )
 def download_booking_template():
+    # A template is intentionally header-only.
+    # Property IDs are workspace-specific, so a
+    # hard-coded example row would be misleading.
     csv_content = (
-        "property_id,check_in,"
+        "property_code,check_in,"
         "check_out,price,booked_on\n"
-        "1,2025-03-01,"
-        "2025-03-05,5000,"
-        "2025-02-20\n"
     )
 
     return Response(
@@ -652,32 +700,109 @@ def download_booking_template():
 @router.get(
     "/bookings/sample",
 )
-def download_booking_sample():
-    csv_content = (
-        "property_id,check_in,"
-        "check_out,price,booked_on\n"
-        "1,2026-01-05,"
-        "2026-01-08,7200,"
-        "2025-12-20\n"
-        "1,2026-01-12,"
-        "2026-01-15,7650,"
-        "2025-12-28\n"
-        "2,2026-01-07,"
-        "2026-01-11,13200,"
-        "2025-12-21\n"
-        "2,2026-01-19,"
-        "2026-01-22,14100,"
-        "2026-01-02\n"
-        "3,2026-01-09,"
-        "2026-01-10,3900,"
-        "2026-01-04\n"
-        "3,2026-01-20,"
-        "2026-01-23,4200,"
-        "2026-01-05\n"
+def download_booking_sample(
+    session: Session = Depends(
+        get_session,
+    ),
+    current_user: User = Depends(
+        get_current_user,
+    ),
+):
+    # Sample rows must reference properties that
+    # belong to the requesting organization.
+    properties = list(
+        session.exec(
+            select(Property)
+            .where(
+                Property.organization_id
+                == current_user.organization_id,
+                Property.is_archived
+                == False,  # noqa: E712
+            )
+            .order_by(Property.id.asc())
+            .limit(3)
+        ).all()
     )
 
+    if not properties:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Create at least one property "
+                "before downloading sample "
+                "booking data."
+            ),
+        )
+
+    output = StringIO()
+    writer = csv.writer(
+        output,
+        lineterminator="\n",
+    )
+
+    writer.writerow(
+        [
+            "property_code",
+            "check_in",
+            "check_out",
+            "price",
+            "booked_on",
+        ]
+    )
+
+    today = date.today()
+
+    for property_index, property_obj in enumerate(
+        properties
+    ):
+        if property_obj.id is None:
+            continue
+
+        for sample_index in range(2):
+            check_in = today + timedelta(
+                days=(
+                    7
+                    + property_index * 4
+                    + sample_index * 10
+                )
+            )
+            nights = (
+                2
+                + (
+                    property_index
+                    + sample_index
+                )
+                % 2
+            )
+            check_out = check_in + timedelta(
+                days=nights,
+            )
+            price = round(
+                max(
+                    property_obj.base_price,
+                    0.0,
+                )
+                * nights,
+                2,
+            )
+            price_text = (
+                f"{price:.2f}"
+                .rstrip("0")
+                .rstrip(".")
+            )
+
+            writer.writerow(
+                [
+                    property_obj.property_code,
+                    check_in.isoformat(),
+                    check_out.isoformat(),
+                    price_text,
+                    today.isoformat(),
+                ]
+            )
+
     return Response(
-        content=csv_content,
+        content=output.getvalue(),
         media_type="text/csv",
         headers={
             "Content-Disposition": (
@@ -705,6 +830,26 @@ def preview_booking_upload(
         require_writable_manager,
     ),
 ):
+    active_property_id = session.exec(
+        select(Property.id)
+        .where(
+            Property.organization_id
+            == current_user.organization_id,
+            Property.is_archived
+            == False,  # noqa: E712
+        )
+        .limit(1)
+    ).first()
+
+    if active_property_id is None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Create or restore an active property "
+                "before importing booking data."
+            ),
+        )
+
     upload_id, filename = (
         save_upload_for_preview(
             file=file,
@@ -767,6 +912,46 @@ def process_booking_upload(
             ),
         )
 
+    active_property_id = session.exec(
+        select(Property.id)
+        .where(
+            Property.organization_id
+            == current_user.organization_id,
+            Property.is_archived
+            == False,  # noqa: E712
+        )
+        .limit(1)
+    ).first()
+
+    if active_property_id is None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Create or restore an active property "
+                "before importing booking data."
+            ),
+        )
+
+    organization = session.exec(
+        select(Organization)
+        .where(
+            Organization.id
+            == current_user.organization_id
+        )
+        .with_for_update()
+    ).first()
+
+    if not organization:
+        raise HTTPException(
+            status_code=404,
+            detail="Organization not found",
+        )
+
+    import_number = max(
+        1,
+        organization.next_import_number,
+    )
+
     job = IngestionJob(
         organization_id=(
             current_user
@@ -775,6 +960,7 @@ def process_booking_upload(
         user_id=(
             current_user.id
         ),
+        import_number=import_number,
         filename=(
             upload_session
             .original_filename
@@ -782,11 +968,17 @@ def process_booking_upload(
         status="pending",
     )
 
+    organization.next_import_number = (
+        import_number + 1
+    )
+
     # Lock the upload before background processing starts.
 
     upload_session.status = (
         "queued"
     )
+
+    session.add(organization)
 
     session.add(
         job,
@@ -939,6 +1131,17 @@ def list_upload_jobs(
         )
     )
 
+    linked_counts = (
+        build_linked_booking_count_map(
+            session=session,
+            jobs=jobs,
+            organization_id=(
+                current_user
+                .organization_id
+            ),
+        )
+    )
+
     return IngestionJobListResponse(
         jobs=[
             build_job_read(
@@ -947,6 +1150,12 @@ def list_upload_jobs(
                     failed_counts.get(
                         job.id,
                         job.failed_rows,
+                    )
+                ),
+                linked_booking_count=(
+                    linked_counts.get(
+                        job.id,
+                        0,
                     )
                 ),
             )
@@ -1028,6 +1237,17 @@ def list_upload_jobs_page(
         )
     )
 
+    linked_counts = (
+        build_linked_booking_count_map(
+            session=session,
+            jobs=jobs,
+            organization_id=(
+                current_user
+                .organization_id
+            ),
+        )
+    )
+
     items = [
         build_job_read(
             job,
@@ -1035,6 +1255,12 @@ def list_upload_jobs_page(
                 failed_counts.get(
                     job.id,
                     job.failed_rows,
+                )
+            ),
+            linked_booking_count=(
+                linked_counts.get(
+                    job.id,
+                    0,
                 )
             ),
         )
@@ -1088,8 +1314,17 @@ def get_job_status(
         )
     )
 
+    linked_booking_count = session.exec(
+        select(func.count(Booking.id)).where(
+            Booking.organization_id
+            == current_user.organization_id,
+            Booking.ingestion_job_id == job.id,
+        )
+    ).one()
+
     return JobStatusResponse(
         job_id=job.id,
+        import_number=job.import_number,
         status=(
             get_effective_status(
                 job,
@@ -1124,6 +1359,12 @@ def get_job_status(
                 failed_rows,
             )
         ),
+        data_removed_at=job.data_removed_at,
+        rollback_available=(
+            job.data_removed_at is None
+            and linked_booking_count > 0
+        ),
+        linked_booking_count=linked_booking_count,
         created_at=(
             job.created_at
         ),
@@ -1131,6 +1372,77 @@ def get_job_status(
             job.completed_at
         ),
     )
+
+
+@router.delete("/jobs/{job_id}/data")
+def remove_imported_booking_data(
+    job_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_writable_manager),
+):
+    job = session.get(IngestionJob, job_id)
+
+    if (
+        not job
+        or job.organization_id
+        != current_user.organization_id
+    ):
+        raise HTTPException(
+            status_code=404,
+            detail="Import not found",
+        )
+
+    if job.data_removed_at is not None:
+        return {
+            "message": "Imported data was already removed",
+            "deleted_bookings": 0,
+        }
+
+    bookings = list(
+        session.exec(
+            select(Booking).where(
+                Booking.organization_id
+                == current_user.organization_id,
+                Booking.ingestion_job_id == job_id,
+            )
+        ).all()
+    )
+
+    if not bookings:
+        if job.processed_rows > 0:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "This import was created before rollback tracking "
+                    "was enabled and cannot be removed automatically."
+                ),
+            )
+
+        job.data_removed_at = datetime.now(timezone.utc)
+        session.add(job)
+        session.commit()
+        return {
+            "message": "Import contained no saved bookings",
+            "deleted_bookings": 0,
+        }
+
+    deleted_count = len(bookings)
+
+    for booking in bookings:
+        session.delete(booking)
+
+    job.data_removed_at = datetime.now(timezone.utc)
+    session.add(job)
+    session.commit()
+
+    clear_analytics_cache(
+        current_user.organization_id
+    )
+
+    return {
+        "message": "Imported booking data removed",
+        "deleted_bookings": deleted_count,
+    }
 
 
 @router.get(

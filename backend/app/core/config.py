@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     rate_limit_enabled: bool = True
     admin_emails: str = ""
 
-    terms_version: str = "2026-05-13"
-    privacy_version: str = "2026-05-13"
+    terms_version: str = "2026-09-03"
+    privacy_version: str = "2026-09-03"
 
     invite_expire_hours: int = 168
 

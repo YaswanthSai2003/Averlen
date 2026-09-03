@@ -40,6 +40,10 @@ import {
   useAuth,
 } from './auth-context'
 
+import {
+  LegalAuthLinks,
+} from '../legal/LegalAuthLinks'
+
 const loginSchema =
   z.object({
     email:
@@ -336,7 +340,9 @@ export function LoginPage() {
               Create an account
             </Link>
           </p>
-        </Card>
+
+        <LegalAuthLinks className="mt-6" />
+</Card>
       </div>
     </main>
   )

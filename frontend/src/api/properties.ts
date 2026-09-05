@@ -139,6 +139,7 @@ export type PropertySummaryPage =
   >
 
 export type PropertySortField =
+  | 'property_code'
   | 'name'
   | 'city'
   | 'base_price'

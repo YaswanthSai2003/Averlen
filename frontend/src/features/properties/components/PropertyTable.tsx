@@ -40,6 +40,14 @@ import {
   formatNumber,
 } from '../../../lib/format'
 
+import {
+  useAuth,
+} from '../../auth/auth-context'
+
+import {
+  getDemoPropertyPhotoUrl,
+} from '../utils/demoPropertyPhotos'
+
 type SortableHeaderProps = {
   label: string
   field: PropertySortField
@@ -126,12 +134,26 @@ export function PropertyTable({
   onRestore,
   onManageRemoval,
 }: PropertyTableProps) {
-  const navigate = useNavigate()
+  const {
+    demoReadOnly,
+  } = useAuth()
+const navigate = useNavigate()
 
   return (
     <Card className="mt-4 overflow-hidden">
       <div className="overflow-x-auto">
-        <Table>
+        <Table className="min-w-[1120px] table-fixed">
+          <colgroup>
+            <col className="w-[18%]" />
+            <col className="w-[10%]" />
+            <col className="w-[14%]" />
+            <col className="w-[10%]" />
+            <col className="w-[14%]" />
+            <col className="w-[10%]" />
+            <col className="w-[8%]" />
+            <col className="w-[11%]" />
+            <col className="w-[5%]" />
+          </colgroup>
           <TableHeader>
             <TableRow>
               <SortableHeader
@@ -140,6 +162,20 @@ export function PropertyTable({
                 activeField={sortBy}
                 order={sortOrder}
                 onSort={onSort}
+              />
+
+              <SortableHeader
+                label="Property ID"
+                field="property_code"
+                activeField={
+                  sortBy
+                }
+                order={
+                  sortOrder
+                }
+                onSort={
+                  onSort
+                }
               />
               <TableHead>Type</TableHead>
               <SortableHeader
@@ -181,10 +217,19 @@ export function PropertyTable({
             {properties.map((property) => {
               const photoUrl = property.photo_url
                 ? buildApiUrl(property.photo_url)
-                : null
+                : demoReadOnly
+                    ? getDemoPropertyPhotoUrl(
+                        property.property_code,
+                      )
+                    : null
 
               return (
-                <TableRow key={property.property_id}>
+                <TableRow
+                  key={
+                    property.property_id
+                  }
+                  className="border-slate-200 focus-within:border-slate-200"
+                >
                   <TableCell>
                     <button
                       type="button"
@@ -210,14 +255,21 @@ export function PropertyTable({
                         <p className="mt-0.5 truncate text-xs text-slate-500">
                           {property.city}
                         </p>
-                        <div className="mt-1 flex items-center gap-2">
-                          <span className="font-mono text-[11px] font-medium text-brand-700">
-                            {property.property_code}
-                          </span>
-                          {property.is_archived && <Badge variant="neutral">Archived</Badge>}
-                        </div>
+                        {property.is_archived && (
+                          <div className="mt-1">
+                            <Badge variant="neutral">
+                              Archived
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                     </button>
+                  </TableCell>
+
+                  <TableCell>
+                    <span className="whitespace-nowrap font-mono text-xs font-semibold tracking-wide text-brand-700">
+                      {property.property_code}
+                    </span>
                   </TableCell>
 
                   <TableCell>

@@ -1,4 +1,8 @@
 import {
+  getDemoPropertyPhotoUrl,
+} from './utils/demoPropertyPhotos'
+
+import {
   ArrowLeft,
   BedDouble,
   Building2,
@@ -296,7 +300,11 @@ export function PropertyDetailPage() {
       ? buildApiUrl(
           property.photo_url,
         )
-      : null
+      : demoReadOnly
+        ? getDemoPropertyPhotoUrl(
+            property.property_code,
+          )
+        : null
 
   const hasBookings =
     property.total_bookings >

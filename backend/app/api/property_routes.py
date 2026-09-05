@@ -50,6 +50,7 @@ router = APIRouter(
 
 
 PropertySortField = Literal[
+    "property_code",
     "name",
     "city",
     "base_price",
@@ -355,6 +356,8 @@ def build_property_summary_statement(
     )
 
     sort_expressions = {
+        "property_code": Property.property_code,
+
         "name": func.lower(
             Property.name
         ),

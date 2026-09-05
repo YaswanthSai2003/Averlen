@@ -5,6 +5,11 @@ import { AppProviders } from './app/AppProviders'
 import { AppRouter } from './app/AppRouter'
 import './styles/index.css'
 
+
+import {
+  BackendWakeGate,
+} from './features/system'
+
 const rootElement = document.getElementById('root')
 
 if (!rootElement) {
@@ -14,7 +19,9 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <AppProviders>
-      <AppRouter />
+      <BackendWakeGate>
+        <AppRouter />
+      </BackendWakeGate>
     </AppProviders>
   </StrictMode>,
 )

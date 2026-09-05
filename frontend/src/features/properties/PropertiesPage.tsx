@@ -65,7 +65,8 @@ function getMutationError(error: unknown, fallback: string) {
 }
 
 function getInitialSortOrder(field: PropertySortField): SortOrder {
-  return field === 'name' || field === 'city' ? 'asc' : 'desc'
+  return field === 'property_code' ||
+  field === 'name' || field === 'city' ? 'asc' : 'desc'
 }
 
 export function PropertiesPage() {
@@ -76,7 +77,7 @@ export function PropertiesPage() {
   const [showArchived, setShowArchived] = useState(false)
   const [city, setCity] = useState('')
   const [propertyType, setPropertyType] = useState('')
-  const [sortBy, setSortBy] = useState<PropertySortField>('name')
+  const [sortBy, setSortBy] = useState<PropertySortField>('property_code')
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
   const [createOpen, setCreateOpen] = useState(false)
   const [editingProperty, setEditingProperty] = useState<PropertySummary | null>(null)

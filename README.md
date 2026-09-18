@@ -30,31 +30,31 @@ A read-only demo workspace with seeded data is also included so the product can 
 
 The dashboard gives teams a quick overview of portfolio performance, including revenue, occupancy, booking trends, and property-level signals.
 
-![Averlen Revenue Dashboard](docs/screenshots/dashboard.png)
+![Averlen Revenue Dashboard](docs/screenshots/dashboard.jpeg)
 
 ### Analytics
 
 Analytics provides portfolio, city, and property-level views so teams can understand revenue and occupancy performance over time.
 
-![Averlen Analytics](docs/screenshots/analytics.png)
+![Averlen Analytics](docs/screenshots/analytics.jpeg)
 
 ### Pricing recommendations
 
 Averlen can generate pricing recommendations, preserve pricing history, and track recommendation status such as accepted or rejected.
 
-![Averlen Pricing Recommendations](docs/screenshots/pricing.png)
+![Averlen Pricing Recommendations](docs/screenshots/pricing.jpeg)
 
 ### AI-assisted insights
 
 AI Insights turns portfolio and booking context into revenue-focused observations while preserving organization-level access controls.
 
-![Averlen AI Insights](docs/screenshots/insights.png)
+![Averlen AI Insights](docs/screenshots/insights.jpeg)
 
 ### Data imports
 
 Booking data can be imported through a CSV workflow with preview, column mapping, validation, job tracking, and import history.
 
-![Averlen Data Imports](docs/screenshots/imports.png)
+![Averlen Data Imports](docs/screenshots/imports.jpeg)
 
 ## Architecture
 

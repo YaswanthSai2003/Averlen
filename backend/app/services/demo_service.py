@@ -251,6 +251,11 @@ def get_or_create_demo_user(session: Session, organization_id: int) -> User:
         user.role = ORG_ADMIN
         user.is_active = True
         user.is_platform_admin = False
+        user.email_verified_at = user.email_verified_at or utc_now()
+        user.email_verification_token_hash = None
+        user.email_verification_expires_at = None
+        user.password_reset_token_hash = None
+        user.password_reset_expires_at = None
 
         if not verify_password(DEMO_PASSWORD, user.hashed_password):
             user.hashed_password = hash_password(DEMO_PASSWORD)
@@ -269,6 +274,7 @@ def get_or_create_demo_user(session: Session, organization_id: int) -> User:
         role=ORG_ADMIN,
         is_active=True,
         is_platform_admin=False,
+        email_verified_at=utc_now(),
     )
 
     session.add(user)

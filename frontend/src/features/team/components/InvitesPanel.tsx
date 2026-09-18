@@ -272,7 +272,7 @@ export function InvitesPanel({
             </div>
 
 
-            <div className="scrollbar-hidden flex max-w-full gap-1 overflow-x-auto overflow-y-hidden rounded-lg bg-slate-100 p-1">
+            <div className="grid w-full grid-cols-3 gap-1 rounded-lg bg-slate-100 p-1 sm:flex sm:w-auto">
               {FILTERS.map(
                 (
                   item,
@@ -367,6 +367,160 @@ export function InvitesPanel({
             }
           />
         ) : (
+          <>
+            <div className="divide-y divide-slate-200 md:hidden">
+              {filteredInvites.map(
+                (
+                  invite,
+                ) => {
+                  const status =
+                    getInviteDisplayStatus(
+                      invite,
+                    )
+
+                  const inviter =
+                    memberById.get(
+                      invite
+                        .invited_by_user_id,
+                    )
+
+                  return (
+                    <div
+                      key={
+                        invite.id
+                      }
+                      className="px-4 py-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="break-all text-sm font-semibold text-slate-900">
+                            {invite.email}
+                          </p>
+
+                          {invite.accepted_at && (
+                            <p className="mt-1 text-xs text-slate-400">
+                              Accepted{' '}
+                              {formatRelativeTeamDate(
+                                invite.accepted_at,
+                              )}
+                            </p>
+                          )}
+                        </div>
+
+                        <Badge
+                          variant={
+                            getInviteStatusVariant(
+                              status,
+                            )
+                          }
+                        >
+                          {formatInviteStatus(
+                            status,
+                          )}
+                        </Badge>
+                      </div>
+
+                      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-slate-100 pt-4">
+                        <div>
+                          <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                            Role
+                          </dt>
+
+                          <dd className="mt-1 text-sm text-slate-600">
+                            {formatTeamRole(
+                              invite.role,
+                            )}
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                            Invited by
+                          </dt>
+
+                          <dd className="mt-1 truncate text-sm text-slate-600">
+                            {inviter
+                              ? getMemberDisplayName(
+                                  inviter,
+                                )
+                              : `User #${invite.invited_by_user_id}`}
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                            Sent
+                          </dt>
+
+                          <dd
+                            title={
+                              formatTeamDate(
+                                invite.created_at,
+                              )
+                            }
+                            className="mt-1 text-sm text-slate-600"
+                          >
+                            {formatRelativeTeamDate(
+                              invite.created_at,
+                            )}
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                            Expires
+                          </dt>
+
+                          <dd className="mt-1 text-sm text-slate-600">
+                            {status ===
+                            'pending'
+                              ? formatTeamDate(
+                                  invite.expires_at,
+                                )
+                              : '—'}
+                          </dd>
+                        </div>
+                      </dl>
+
+                      {!readOnly &&
+                      (
+                        status === 'pending' ||
+                        status === 'expired'
+                      ) ? (
+                        <div className="mt-4 border-t border-slate-100 pt-4">
+                          <InviteLinkActions
+                            invite={
+                              invite
+                            }
+                            canCancel={
+                              status ===
+                              'pending'
+                            }
+                            cancelling={
+                              cancellingId ===
+                              invite.id
+                            }
+                            onCancel={() => {
+                              setCancellingInvite(
+                                invite,
+                              )
+                            }}
+                          />
+                        </div>
+                      ) : readOnly &&
+                        status ===
+                          'pending' ? (
+                        <p className="mt-4 text-xs text-slate-400">
+                          Read-only workspace
+                        </p>
+                      ) : null}
+                    </div>
+                  )
+                },
+              )}
+            </div>
+
+            <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -550,6 +704,8 @@ export function InvitesPanel({
               )}
             </TableBody>
           </Table>
+            </div>
+          </>
         )}
       </Card>
 

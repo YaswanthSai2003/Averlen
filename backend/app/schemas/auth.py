@@ -22,6 +22,23 @@ class ChangePasswordRequest(SQLModel):
     new_password: str
 
 
+class EmailActionRequest(SQLModel):
+    email: str
+
+
+class TokenActionRequest(SQLModel):
+    token: str
+
+
+class ResetPasswordRequest(SQLModel):
+    token: str
+    new_password: str
+
+
+class MessageResponse(SQLModel):
+    message: str
+
+
 class UserRead(SQLModel):
     id: int
     organization_id: int
@@ -31,6 +48,7 @@ class UserRead(SQLModel):
     role: str
     is_active: bool
     is_platform_admin: bool = False
+    email_verified_at: datetime | None = None
     terms_accepted_at: datetime | None = None
     privacy_accepted_at: datetime | None = None
     terms_version: str | None = None

@@ -22,6 +22,16 @@ class Settings(BaseSettings):
 
     invite_expire_hours: int = 168
 
+    require_email_verification: bool = True
+    email_verification_expire_hours: int = 24
+    password_reset_expire_minutes: int = 60
+
+    frontend_app_url: str = "http://localhost:5173"
+    resend_api_key: str = ""
+    email_from: str = "Averlen <onboarding@resend.dev>"
+    email_reply_to: str = ""
+    email_send_timeout_seconds: int = 10
+
     database_url: str = "sqlite:///./averlen.db"
     redis_url: str = "redis://localhost:6379/0"
 

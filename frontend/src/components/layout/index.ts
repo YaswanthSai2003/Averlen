@@ -1,5 +1,6 @@
 export { AppShell } from './AppShell'
 export { Brand } from './Brand'
+export { MobileNavigation } from './MobileNavigation'
 export { PageHeader } from './PageHeader'
 export { Sidebar } from './Sidebar'
 export { TopBar } from './TopBar'

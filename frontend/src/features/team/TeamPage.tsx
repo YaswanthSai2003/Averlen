@@ -727,7 +727,7 @@ export function TeamPage() {
           />
 
 
-          <div className="scrollbar-hidden mt-6 flex max-w-full items-center gap-1 overflow-x-auto overflow-y-hidden border-b border-slate-200">
+          <div className="mt-6 grid grid-cols-3 border-b border-slate-200">
             <button
               type="button"
               onClick={() => {
@@ -738,14 +738,18 @@ export function TeamPage() {
               className={`
                 relative
                 flex
+                min-w-0
                 items-center
-                gap-2
-                whitespace-nowrap
-                px-4
+                justify-center
+                gap-1.5
+                px-2
                 py-3
-                text-sm
+                text-xs
                 font-medium
                 transition
+                sm:gap-2
+                sm:px-4
+                sm:text-sm
                 ${
                   activeTab ===
                   'members'
@@ -756,18 +760,23 @@ export function TeamPage() {
             >
               <Users
                 size={16}
+                className="shrink-0"
                 aria-hidden="true"
               />
 
-              Members
+              <span className="truncate">
+                Members
+              </span>
 
-              <Badge>
-                {members.length}
-              </Badge>
+              <span className="hidden sm:inline-flex">
+                <Badge>
+                  {members.length}
+                </Badge>
+              </span>
 
               {activeTab ===
                 'members' && (
-                <span className="absolute inset-x-0 bottom-[-1px] h-0.5 bg-brand-600" />
+                <span className="absolute inset-x-2 bottom-[-1px] h-0.5 rounded-full bg-brand-600 sm:inset-x-4" />
               )}
             </button>
 
@@ -782,14 +791,18 @@ export function TeamPage() {
               className={`
                 relative
                 flex
+                min-w-0
                 items-center
-                gap-2
-                whitespace-nowrap
-                px-4
+                justify-center
+                gap-1.5
+                px-2
                 py-3
-                text-sm
+                text-xs
                 font-medium
                 transition
+                sm:gap-2
+                sm:px-4
+                sm:text-sm
                 ${
                   activeTab ===
                   'requests'
@@ -800,21 +813,30 @@ export function TeamPage() {
             >
               <UserRoundSearch
                 size={16}
+                className="shrink-0"
                 aria-hidden="true"
               />
 
-              Access requests
+              <span className="truncate sm:hidden">
+                Requests
+              </span>
+
+              <span className="hidden truncate sm:inline">
+                Access requests
+              </span>
 
               {pendingRequestCount >
                 0 && (
-                <Badge variant="warning">
-                  {pendingRequestCount}
-                </Badge>
+                <span className="hidden sm:inline-flex">
+                  <Badge variant="warning">
+                    {pendingRequestCount}
+                  </Badge>
+                </span>
               )}
 
               {activeTab ===
                 'requests' && (
-                <span className="absolute inset-x-0 bottom-[-1px] h-0.5 bg-brand-600" />
+                <span className="absolute inset-x-2 bottom-[-1px] h-0.5 rounded-full bg-brand-600 sm:inset-x-4" />
               )}
             </button>
 
@@ -829,14 +851,18 @@ export function TeamPage() {
               className={`
                 relative
                 flex
+                min-w-0
                 items-center
-                gap-2
-                whitespace-nowrap
-                px-4
+                justify-center
+                gap-1.5
+                px-2
                 py-3
-                text-sm
+                text-xs
                 font-medium
                 transition
+                sm:gap-2
+                sm:px-4
+                sm:text-sm
                 ${
                   activeTab ===
                   'invites'
@@ -847,21 +873,30 @@ export function TeamPage() {
             >
               <Mail
                 size={16}
+                className="shrink-0"
                 aria-hidden="true"
               />
 
-              Invitations
+              <span className="truncate sm:hidden">
+                Invites
+              </span>
+
+              <span className="hidden truncate sm:inline">
+                Invitations
+              </span>
 
               {pendingInviteCount >
                 0 && (
-                <Badge variant="warning">
-                  {pendingInviteCount}
-                </Badge>
+                <span className="hidden sm:inline-flex">
+                  <Badge variant="warning">
+                    {pendingInviteCount}
+                  </Badge>
+                </span>
               )}
 
               {activeTab ===
                 'invites' && (
-                <span className="absolute inset-x-0 bottom-[-1px] h-0.5 bg-brand-600" />
+                <span className="absolute inset-x-2 bottom-[-1px] h-0.5 rounded-full bg-brand-600 sm:inset-x-4" />
               )}
             </button>
           </div>

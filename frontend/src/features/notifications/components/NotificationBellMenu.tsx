@@ -1,13 +1,26 @@
 import {
+  type ReactNode,
+} from 'react'
+
+import {
   useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
 
 import {
+  ArrowRight,
   Bell,
   CheckCheck,
+  Database,
   Inbox,
+  IndianRupee,
+  Info,
+  Settings,
+  Shield,
+  Sparkles,
+  Upload,
+  Users,
 } from 'lucide-react'
 
 import {
@@ -45,23 +58,104 @@ const RECENT_NOTIFICATION_LIMIT =
   5
 
 
-function getPriorityDotClass(
+function getNotificationIcon(
+  type: string,
+): ReactNode {
+  switch (
+    type.toUpperCase()
+  ) {
+    case 'UPLOAD':
+      return (
+        <Upload
+          size={16}
+          aria-hidden="true"
+        />
+      )
+
+    case 'DATA_QUALITY':
+      return (
+        <Database
+          size={16}
+          aria-hidden="true"
+        />
+      )
+
+    case 'PRICING':
+      return (
+        <IndianRupee
+          size={16}
+          aria-hidden="true"
+        />
+      )
+
+    case 'SECURITY':
+      return (
+        <Shield
+          size={16}
+          aria-hidden="true"
+        />
+      )
+
+    case 'WORKSPACE':
+      return (
+        <Users
+          size={16}
+          aria-hidden="true"
+        />
+      )
+
+    case 'AI_INSIGHT':
+      return (
+        <Sparkles
+          size={16}
+          aria-hidden="true"
+        />
+      )
+
+    case 'SYSTEM':
+      return (
+        <Settings
+          size={16}
+          aria-hidden="true"
+        />
+      )
+
+    default:
+      return (
+        <Bell
+          size={16}
+          aria-hidden="true"
+        />
+      )
+  }
+}
+
+
+function getNotificationIconClass(
   priority: string,
 ) {
   switch (
     priority.toUpperCase()
   ) {
     case 'SUCCESS':
-      return 'bg-emerald-500'
+      return (
+        'bg-emerald-50 text-emerald-700'
+      )
 
     case 'WARNING':
-      return 'bg-amber-500'
+      return (
+        'bg-amber-50 text-amber-700'
+      )
 
     case 'ERROR':
-      return 'bg-red-500'
+      return (
+        'bg-red-50 text-red-700'
+      )
 
     default:
-      return 'bg-brand-500'
+      return (
+        'bg-brand-50 text-brand-700'
+      )
   }
 }
 
@@ -166,12 +260,12 @@ export function NotificationBellMenu() {
       !demoReadOnly
     ) {
       await markReadMutation
-       .mutateAsync(
-        notification.id,
-      )
-      .catch(
-        () => undefined,
-      )
+        .mutateAsync(
+          notification.id,
+        )
+        .catch(
+          () => undefined,
+        )
     }
 
     const destination =
@@ -255,26 +349,34 @@ export function NotificationBellMenu() {
 
 
       <DropdownMenuContent
-        align="end"
-        className="w-[380px] max-w-[calc(100vw-24px)] p-0"
-      >
-        <div className="flex items-center justify-between gap-3 px-4 py-3.5">
-          <div>
-            <p className="text-sm font-semibold text-slate-950">
-              Notifications
-            </p>
+        align="end" sideOffset={8} collisionPadding={16}
+        className="w-[calc(100vw-32px)] max-w-[360px] overflow-hidden rounded-xl p-0 sm:w-[360px]"
+        >
+        <div className="flex items-start justify-between gap-3 px-4 py-3.5">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-slate-950">
+                Notifications
+              </p>
+
+              {unreadCount > 0 && (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-brand-50 px-1.5 text-[10px] font-semibold leading-5 text-brand-700">
+                  {visibleUnreadCount}
+                </span>
+              )}
+            </div>
 
             <p className="mt-0.5 text-xs text-slate-500">
               {unreadCount > 0
-                ? `${unreadCount} unread`
+                ? 'Recent workspace activity'
                 : 'You are all caught up'}
             </p>
           </div>
 
 
           {demoReadOnly ? (
-            <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-1.5 text-[11px] font-semibold text-amber-700">
-              Demo preview
+            <span className="inline-flex shrink-0 items-center rounded-md bg-amber-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.06em] text-amber-700">
+              Demo
             </span>
           ) : (
             unreadCount > 0 && (
@@ -285,6 +387,7 @@ export function NotificationBellMenu() {
                 }
                 className="
                   flex
+                  shrink-0
                   items-center
                   gap-1.5
                   rounded-md
@@ -316,15 +419,23 @@ export function NotificationBellMenu() {
         </div>
 
 
-        <DropdownMenuSeparator />
-
-
         {demoReadOnly && (
-          <div className="border-b border-amber-100 bg-amber-50/70 px-4 py-2.5">
-            <p className="text-xs leading-5 text-amber-800">
-              Read status is intentionally fixed so every visitor sees the same sample notification feed.
+          <div className="flex items-start gap-2 border-y border-amber-100 bg-amber-50/60 px-4 py-2">
+            <Info
+              size={14}
+              className="mt-0.5 shrink-0 text-amber-700"
+              aria-hidden="true"
+            />
+
+            <p className="text-[11px] leading-4 text-amber-800">
+              Demo feed — read status stays fixed for every visitor.
             </p>
           </div>
+        )}
+
+
+        {!demoReadOnly && (
+          <DropdownMenuSeparator className="my-0" />
         )}
 
 
@@ -341,9 +452,15 @@ export function NotificationBellMenu() {
                   key={index}
                   className="animate-pulse"
                 >
-                  <div className="h-3 w-32 rounded bg-slate-200" />
-                  <div className="mt-2 h-3 w-full rounded bg-slate-100" />
-                  <div className="mt-1 h-3 w-2/3 rounded bg-slate-100" />
+                  <div className="flex gap-3">
+                    <div className="size-9 shrink-0 rounded-lg bg-slate-100" />
+
+                    <div className="min-w-0 flex-1">
+                      <div className="h-3 w-2/3 rounded bg-slate-200" />
+                      <div className="mt-2 h-3 w-full rounded bg-slate-100" />
+                      <div className="mt-1 h-3 w-1/2 rounded bg-slate-100" />
+                    </div>
+                  </div>
                 </div>
               ),
             )}
@@ -384,12 +501,11 @@ export function NotificationBellMenu() {
             </p>
 
             <p className="mt-1 text-xs text-slate-500">
-              Important Averlen
-              activity will appear here.
+              Important Averlen activity will appear here.
             </p>
           </div>
         ) : (
-          <div className="scrollbar-hidden max-h-[400px] overflow-y-auto py-1">
+          <div className="scrollbar-hidden max-h-[390px] overflow-y-auto py-1.5">
             {recentQuery
               .data
               ?.items
@@ -401,15 +517,20 @@ export function NotificationBellMenu() {
                     key={
                       notification.id
                     }
-                    className="
+                    className={`
                       cursor-pointer
                       items-start
                       gap-3
                       rounded-none
-                      px-4
+                      px-3.5
                       py-3
                       focus:bg-slate-50
-                    "
+                      ${
+                        notification.is_read
+                          ? ''
+                          : 'bg-brand-50/25'
+                      }
+                    `}
                     onSelect={() => {
                       void openNotification(
                         notification,
@@ -418,19 +539,21 @@ export function NotificationBellMenu() {
                   >
                     <span
                       className={`
-                        mt-1.5
-                        size-2
+                        flex
+                        size-9
                         shrink-0
-                        rounded-full
-                        ${
-                          notification.is_read
-                            ? 'bg-slate-300'
-                            : getPriorityDotClass(
-                                notification.priority,
-                              )
-                        }
+                        items-center
+                        justify-center
+                        rounded-lg
+                        ${getNotificationIconClass(
+                          notification.priority,
+                        )}
                       `}
-                    />
+                    >
+                      {getNotificationIcon(
+                        notification.type,
+                      )}
+                    </span>
 
 
                     <div className="min-w-0 flex-1">
@@ -438,14 +561,14 @@ export function NotificationBellMenu() {
                         <p
                           className={
                             notification.is_read
-                              ? 'truncate text-sm font-medium text-slate-700'
-                              : 'truncate text-sm font-semibold text-slate-950'
+                              ? 'line-clamp-1 text-sm font-medium leading-5 text-slate-700'
+                              : 'line-clamp-1 text-sm font-semibold leading-5 text-slate-950'
                           }
                         >
                           {notification.title}
                         </p>
 
-                        <span className="shrink-0 text-[11px] text-slate-400">
+                        <span className="shrink-0 pt-0.5 text-[10px] font-medium text-slate-400">
                           {formatRelativeNotificationTime(
                             notification.created_at,
                           )}
@@ -453,7 +576,7 @@ export function NotificationBellMenu() {
                       </div>
 
 
-                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                      <p className="mt-1 line-clamp-2 text-xs leading-[1.15rem] text-slate-500">
                         {formatNotificationMessage(
                           notification.type,
                           notification.message,
@@ -467,14 +590,15 @@ export function NotificationBellMenu() {
         )}
 
 
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="my-0" />
 
 
         <DropdownMenuItem
           className="
             cursor-pointer
-            justify-center
+            justify-between
             rounded-none
+            px-4
             py-3
             text-sm
             font-medium
@@ -488,7 +612,14 @@ export function NotificationBellMenu() {
             )
           }}
         >
-          View all notifications
+          <span>
+            View all notifications
+          </span>
+
+          <ArrowRight
+            size={15}
+            aria-hidden="true"
+          />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

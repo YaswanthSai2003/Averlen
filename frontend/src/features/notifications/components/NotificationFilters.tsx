@@ -31,10 +31,10 @@ export function NotificationFilters({
   onIncludeReadChange,
 }: NotificationFiltersProps) {
   return (
-    <Card className="mt-6 px-5 py-4 sm:px-6 sm:py-5">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <Card className="mt-5 px-4 py-4 sm:px-5 sm:py-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
             <Filter
               size={17}
               aria-hidden="true"
@@ -46,20 +46,20 @@ export function NotificationFilters({
               Activity filters
             </p>
 
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              Narrow the feed by read status and notification type.
+            <p className="mt-0.5 text-xs leading-5 text-slate-500">
+              Narrow the feed without leaving the page.
             </p>
           </div>
         </div>
 
 
-        <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-[auto_13rem] lg:items-end">
+        <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-[auto_minmax(12rem,1fr)] lg:w-auto lg:grid-cols-[auto_13rem] lg:items-end">
           <div>
             <p className="mb-1.5 text-sm font-medium text-slate-700">
               Status
             </p>
 
-            <div className="inline-flex h-10 w-full rounded-lg border border-slate-300 bg-white p-1 sm:w-auto">
+            <div className="grid h-10 w-full grid-cols-2 rounded-lg border border-slate-300 bg-slate-50 p-1 sm:inline-grid sm:w-auto">
               <button
                 type="button"
                 aria-pressed={

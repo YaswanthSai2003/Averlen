@@ -72,6 +72,54 @@ const RegisterPage =
   )
 
 
+const VerifyEmailPage =
+  lazy(
+    () =>
+      import(
+        '../features/auth/VerifyEmailPage'
+      ).then(
+        (
+          module,
+        ) => ({
+          default:
+            module.VerifyEmailPage,
+        }),
+      ),
+  )
+
+
+const ForgotPasswordPage =
+  lazy(
+    () =>
+      import(
+        '../features/auth/ForgotPasswordPage'
+      ).then(
+        (
+          module,
+        ) => ({
+          default:
+            module.ForgotPasswordPage,
+        }),
+      ),
+  )
+
+
+const ResetPasswordPage =
+  lazy(
+    () =>
+      import(
+        '../features/auth/ResetPasswordPage'
+      ).then(
+        (
+          module,
+        ) => ({
+          default:
+            module.ResetPasswordPage,
+        }),
+      ),
+  )
+
+
 const DashboardPage =
   lazy(
     () =>
@@ -416,6 +464,36 @@ export function AppRouter() {
         element={
           <LazyRoute>
             <RegisterPage />
+          </LazyRoute>
+        }
+      />
+
+
+      <Route
+        path="/verify-email"
+        element={
+          <LazyRoute>
+            <VerifyEmailPage />
+          </LazyRoute>
+        }
+      />
+
+
+      <Route
+        path="/forgot-password"
+        element={
+          <LazyRoute>
+            <ForgotPasswordPage />
+          </LazyRoute>
+        }
+      />
+
+
+      <Route
+        path="/reset-password"
+        element={
+          <LazyRoute>
+            <ResetPasswordPage />
           </LazyRoute>
         }
       />

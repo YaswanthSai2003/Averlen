@@ -5,6 +5,7 @@ import uuid
 # These must be set BEFORE importing app/settings.
 os.environ["TESTING"] = "true"
 os.environ["RATE_LIMIT_ENABLED"] = "false"
+os.environ["REQUIRE_EMAIL_VERIFICATION"] = "false"
 os.environ["BCRYPT_ROUNDS"] = "4"
 os.environ["DISABLE_AUDIT_LOGS"] = "true"
 os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-pytest-only"
@@ -46,6 +47,7 @@ def disable_external_services(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "openrouter_api_key", "")
     monkeypatch.setattr(settings, "media_storage_backend", "local")
     monkeypatch.setattr(settings, "rate_limit_enabled", False)
+    monkeypatch.setattr(settings, "require_email_verification", False)
     monkeypatch.setattr(settings, "disable_audit_logs", True)
     monkeypatch.setattr(settings, "bcrypt_rounds", 4)
     monkeypatch.setattr(settings, "upload_dir", str(private_upload_dir))

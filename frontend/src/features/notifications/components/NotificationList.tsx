@@ -152,10 +152,10 @@ export function NotificationList({
 
 
   return (
-    <Card className="mt-5 overflow-hidden">
-      <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+    <Card className="mt-5 overflow-hidden border-slate-200/90">
+      <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-6">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
             <Inbox
               size={17}
               aria-hidden="true"
@@ -176,7 +176,7 @@ export function NotificationList({
         </div>
 
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge>
             {total} total
           </Badge>
@@ -266,7 +266,7 @@ export function NotificationList({
               <section
                 key={group}
               >
-                <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-2.5 sm:px-6">
+                <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-2 sm:px-5 lg:px-6">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                     {group}
                   </p>
@@ -314,16 +314,17 @@ export function NotificationList({
           )}
 
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50/40 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-6">
             <p className="text-sm text-slate-500">
               Page {page} of{' '}
               {totalPages}
             </p>
 
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex">
               <Button
                 variant="secondary"
                 size="sm"
+                className="w-full justify-center sm:w-auto"
                 disabled={
                   page <= 1
                 }
@@ -337,6 +338,7 @@ export function NotificationList({
               <Button
                 variant="secondary"
                 size="sm"
+                className="w-full justify-center sm:w-auto"
                 disabled={
                   page >=
                   totalPages

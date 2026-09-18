@@ -289,10 +289,12 @@ export function NotificationItem({
       }
       className={`
         relative
-        px-5
-        py-5
+        px-4
+        py-4
         transition-colors
-        sm:px-6
+        sm:px-5
+        sm:py-5
+        lg:px-6
         ${
           notification.is_read
             ? 'bg-white'
@@ -310,11 +312,12 @@ export function NotificationItem({
       )}
 
 
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-3 sm:gap-4">
         <div
           className={`
             flex
-            size-10
+            size-9
+            sm:size-10
             shrink-0
             items-center
             justify-center
@@ -331,9 +334,9 @@ export function NotificationItem({
 
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 pr-1">
                 {!notification.is_read && (
                   <span
                     className="size-2 rounded-full bg-brand-500"
@@ -385,21 +388,22 @@ export function NotificationItem({
               </div>
 
 
-              <h3 className="mt-2 text-[15px] font-semibold leading-6 text-slate-950">
+              <h3 className="mt-2 text-[15px] font-semibold leading-5 text-slate-950 sm:leading-6">
                 {notification.title}
               </h3>
 
-              <p className="mt-1 max-w-4xl text-sm leading-6 text-slate-600">
+              <p className="mt-1 max-w-4xl text-sm leading-5 text-slate-600 sm:leading-6">
                 {formattedMessage}
               </p>
             </div>
 
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2 md:justify-end">
               {actionLabel && (
                 <Button
                   variant="secondary"
                   size="sm"
+                  className="flex-1 justify-center md:flex-none"
                   onClick={(
                     event,
                   ) => {

@@ -69,6 +69,8 @@ type LoginForm =
 type LoginLocationState = {
   registered?: boolean
   email?: string
+  emailVerified?: boolean
+  passwordReset?: boolean
 }
 
 export function LoginPage() {
@@ -103,9 +105,16 @@ export function LoginPage() {
   ] =
     useState(false)
 
+  const [
+    verificationRequired,
+    setVerificationRequired,
+  ] =
+    useState(false)
+
   const {
     register,
     handleSubmit,
+    getValues,
     formState: {
       errors,
       isSubmitting,
@@ -142,6 +151,7 @@ export function LoginPage() {
     values: LoginForm,
   ) {
     setServerError(null)
+    setVerificationRequired(false)
 
     try {
       await signIn(
@@ -156,6 +166,20 @@ export function LoginPage() {
         },
       )
     } catch (error) {
+      if (
+        error instanceof ApiError &&
+        error.status === 403 &&
+        error.message
+          .toLowerCase()
+          .includes(
+            'not verified',
+          )
+      ) {
+        setVerificationRequired(
+          true,
+        )
+      }
+
       setServerError(
         error instanceof ApiError
           ? error.message
@@ -219,12 +243,45 @@ export function LoginPage() {
             </div>
           )}
 
+          {locationState?.emailVerified && (
+            <div
+              role="status"
+              className="mt-6 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700"
+            >
+              Email verified successfully. Sign in to continue.
+            </div>
+          )}
+
+          {locationState?.passwordReset && (
+            <div
+              role="status"
+              className="mt-6 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700"
+            >
+              Password updated successfully. Sign in with your new password.
+            </div>
+          )}
+
           {serverError && (
             <div
               role="alert"
               className="mt-6 rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700"
             >
-              {serverError}
+              <p>
+                {serverError}
+              </p>
+
+              {verificationRequired && (
+                <Link
+                  to={`/verify-email?email=${encodeURIComponent(
+                    getValues(
+                      'email',
+                    ),
+                  )}`}
+                  className="mt-2 inline-flex font-medium text-danger-800 underline underline-offset-2"
+                >
+                  Resend verification email
+                </Link>
+              )}
             </div>
           )}
 
@@ -250,19 +307,30 @@ export function LoginPage() {
               )}
             />
 
-            <Input
-              label="Password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="Enter your password"
-              error={
-                errors.password
-                  ?.message
-              }
-              {...register(
-                'password',
-              )}
-            />
+            <div>
+              <Input
+                label="Password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                error={
+                  errors.password
+                    ?.message
+                }
+                {...register(
+                  'password',
+                )}
+              />
+
+              <div className="mt-2 text-right">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-medium text-brand-700 hover:text-brand-800"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            </div>
 
             <Button
               type="submit"

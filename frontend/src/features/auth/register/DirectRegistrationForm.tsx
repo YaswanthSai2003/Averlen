@@ -331,38 +331,48 @@ export function DirectRegistrationForm() {
     )
 
     try {
-      await registerAccount({
-        email:
-          identity.email,
+      const createdUser =
+        await registerAccount({
+          email:
+            identity.email,
 
-        password:
-          values.password,
+          password:
+            values.password,
 
-        full_name:
-          identity.fullName,
+          full_name:
+            identity.fullName,
 
-        organization_name:
-          identity.organizationName,
+          organization_name:
+            identity.organizationName,
 
-        accepted_terms:
-          values.acceptedTerms,
+          accepted_terms:
+            values.acceptedTerms,
 
-        accepted_privacy_policy:
-          values.acceptedPrivacy,
-      })
+          accepted_privacy_policy:
+            values.acceptedPrivacy,
+        })
+
+      if (createdUser.email_verified_at) {
+        navigate(
+          '/login',
+          {
+            replace: true,
+            state: {
+              registered: true,
+              email: identity.email,
+            },
+          },
+        )
+
+        return
+      }
 
       navigate(
-        '/login',
+        `/verify-email?email=${encodeURIComponent(
+          identity.email,
+        )}`,
         {
           replace: true,
-
-          state: {
-            registered:
-              true,
-
-            email:
-              identity.email,
-          },
         },
       )
     } catch (

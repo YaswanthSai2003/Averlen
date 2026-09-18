@@ -51,6 +51,10 @@ const userSchema =
     is_platform_admin:
       z.boolean(),
 
+    email_verified_at:
+      z.string()
+        .nullable(),
+
     terms_accepted_at:
       z.string()
         .nullable(),
@@ -222,6 +226,12 @@ export type ChangePasswordPayload = {
 }
 
 
+export type ResetPasswordPayload = {
+  token: string
+  new_password: string
+}
+
+
 let initialSessionPromise:
   Promise<AuthUser | null> |
   null = null
@@ -318,6 +328,108 @@ export async function register(
     )
 
   return userSchema.parse(
+    raw,
+  )
+}
+
+
+export async function requestEmailVerification(
+  email: string,
+) {
+  const raw =
+    await apiRequest<unknown>(
+      '/api/auth/resend-verification',
+      {
+        method:
+          'POST',
+
+        body: {
+          email:
+            email.trim(),
+        },
+
+        skipAuthRefresh:
+          true,
+      },
+    )
+
+  return messageSchema.parse(
+    raw,
+  )
+}
+
+
+export async function verifyEmail(
+  token: string,
+) {
+  const raw =
+    await apiRequest<unknown>(
+      '/api/auth/verify-email',
+      {
+        method:
+          'POST',
+
+        body: {
+          token,
+        },
+
+        skipAuthRefresh:
+          true,
+      },
+    )
+
+  return messageSchema.parse(
+    raw,
+  )
+}
+
+
+export async function requestPasswordReset(
+  email: string,
+) {
+  const raw =
+    await apiRequest<unknown>(
+      '/api/auth/forgot-password',
+      {
+        method:
+          'POST',
+
+        body: {
+          email:
+            email.trim(),
+        },
+
+        skipAuthRefresh:
+          true,
+      },
+    )
+
+  return messageSchema.parse(
+    raw,
+  )
+}
+
+
+export async function resetPassword(
+  payload:
+    ResetPasswordPayload,
+) {
+  const raw =
+    await apiRequest<unknown>(
+      '/api/auth/reset-password',
+      {
+        method:
+          'POST',
+
+        body:
+          payload,
+
+        skipAuthRefresh:
+          true,
+      },
+    )
+
+  return messageSchema.parse(
     raw,
   )
 }

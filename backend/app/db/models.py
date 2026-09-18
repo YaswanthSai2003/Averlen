@@ -36,6 +36,29 @@ class User(SQLModel, table=True):
     is_active: bool = True
     is_platform_admin: bool = Field(default=False, index=True)
 
+    email_verified_at: Optional[datetime] = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),
+    )
+    email_verification_token_hash: Optional[str] = Field(
+        default=None,
+        index=True,
+        unique=True,
+    )
+    email_verification_expires_at: Optional[datetime] = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),
+    )
+    password_reset_token_hash: Optional[str] = Field(
+        default=None,
+        index=True,
+        unique=True,
+    )
+    password_reset_expires_at: Optional[datetime] = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),
+    )
+
     terms_accepted_at: Optional[datetime] = None
     privacy_accepted_at: Optional[datetime] = None
     terms_version: Optional[str] = None

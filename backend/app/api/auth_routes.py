@@ -19,21 +19,38 @@ from sqlmodel import Session, select
 
 from app.api.deps import get_current_user, is_demo_user, require_writable_user
 from app.core.config import settings
+from app.core.logging import logger
 from app.core.roles import ORG_ADMIN
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db.database import get_session
 from app.db.models import Organization, User
 from app.schemas.auth import (
     ChangePasswordRequest,
+    EmailActionRequest,
+    MessageResponse,
+    ResetPasswordRequest,
     SessionListResponse,
     SessionRead,
     Token,
+    TokenActionRequest,
     UserCreate,
     UserRead,
     UserUpdate,
 )
 from app.services.audit_service import create_manual_audit_log
+from app.services.account_token_service import (
+    consume_password_reset_token,
+    get_user_for_password_reset,
+    issue_email_verification_token,
+    issue_password_reset_token,
+    verify_email_token,
+)
 from app.services.demo_service import DEMO_EMAIL, ensure_demo_workspace
+from app.services.email_service import (
+    EmailDeliveryError,
+    send_password_reset_email,
+    send_verification_email,
+)
 from app.services.invite_service import (
     get_valid_invite_by_token,
     mark_invite_accepted,
@@ -213,6 +230,7 @@ def validate_password_strength(password: str) -> None:
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/hour")
 def register_user(
     request: Request,
     payload: UserCreate,
@@ -346,6 +364,11 @@ def register_user(
         full_name=payload.full_name,
         hashed_password=hash_password(payload.password),
         role=user_role,
+        email_verified_at=(
+            None
+            if settings.require_email_verification
+            else accepted_at
+        ),
         terms_accepted_at=accepted_at,
         privacy_accepted_at=accepted_at,
         terms_version=settings.terms_version,
@@ -374,6 +397,24 @@ def register_user(
             dedupe_key=f"workspace_member_joined:{user.id}",
         )
 
+    if settings.require_email_verification:
+        verification_token = issue_email_verification_token(
+            session=session,
+            user=user,
+        )
+
+        try:
+            send_verification_email(
+                email=user.email,
+                token=verification_token,
+            )
+        except EmailDeliveryError as exc:
+            logger.warning(
+                "Unable to send verification email to %s: %s",
+                user.email,
+                exc,
+            )
+
     create_manual_audit_log(
         session=session,
         request=request,
@@ -385,6 +426,171 @@ def register_user(
     )
 
     return user
+
+
+@router.post(
+    "/resend-verification",
+    response_model=MessageResponse,
+)
+@limiter.limit("5/hour")
+def resend_verification_email(
+    request: Request,
+    payload: EmailActionRequest,
+    session: Session = Depends(get_session),
+):
+    normalized_email = normalize_email(payload.email)
+    user = session.exec(
+        select(User).where(User.email == normalized_email)
+    ).first()
+
+    if (
+        settings.require_email_verification
+        and user
+        and user.is_active
+        and user.email_verified_at is None
+        and normalized_email != DEMO_EMAIL.lower()
+    ):
+        verification_token = issue_email_verification_token(
+            session=session,
+            user=user,
+        )
+
+        try:
+            send_verification_email(
+                email=user.email,
+                token=verification_token,
+            )
+        except EmailDeliveryError as exc:
+            logger.warning(
+                "Unable to resend verification email to %s: %s",
+                user.email,
+                exc,
+            )
+
+    return MessageResponse(
+        message=(
+            "If this account still needs verification, a new verification email has been sent."
+        )
+    )
+
+
+@router.post(
+    "/verify-email",
+    response_model=MessageResponse,
+)
+@limiter.limit("20/hour")
+def verify_email(
+    request: Request,
+    payload: TokenActionRequest,
+    session: Session = Depends(get_session),
+):
+    verify_email_token(
+        session=session,
+        raw_token=payload.token,
+    )
+
+    return MessageResponse(
+        message="Email verified successfully. You can now sign in."
+    )
+
+
+@router.post(
+    "/forgot-password",
+    response_model=MessageResponse,
+)
+@limiter.limit("5/hour")
+def forgot_password(
+    request: Request,
+    payload: EmailActionRequest,
+    session: Session = Depends(get_session),
+):
+    normalized_email = normalize_email(payload.email)
+    user = session.exec(
+        select(User).where(User.email == normalized_email)
+    ).first()
+
+    if (
+        user
+        and user.is_active
+        and normalized_email != DEMO_EMAIL.lower()
+    ):
+        reset_token = issue_password_reset_token(
+            session=session,
+            user=user,
+        )
+
+        try:
+            send_password_reset_email(
+                email=user.email,
+                token=reset_token,
+            )
+        except EmailDeliveryError as exc:
+            logger.warning(
+                "Unable to send password reset email to %s: %s",
+                user.email,
+                exc,
+            )
+
+    return MessageResponse(
+        message=(
+            "If an Averlen account exists for that email, a password reset link has been sent."
+        )
+    )
+
+
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+)
+@limiter.limit("10/hour")
+def reset_password(
+    request: Request,
+    payload: ResetPasswordRequest,
+    session: Session = Depends(get_session),
+):
+    validate_password_strength(payload.new_password)
+
+    user = get_user_for_password_reset(
+        session=session,
+        raw_token=payload.token,
+    )
+
+    user.hashed_password = hash_password(payload.new_password)
+
+    # A valid reset link also proves control of the account email address.
+    if user.email_verified_at is None:
+        user.email_verified_at = datetime.now(timezone.utc)
+        user.email_verification_token_hash = None
+        user.email_verification_expires_at = None
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    consume_password_reset_token(
+        session=session,
+        user=user,
+    )
+
+    if user.id is not None:
+        revoke_all_user_sessions(
+            session,
+            user.id,
+        )
+
+    notify_security_event(
+        session=session,
+        current_user=user,
+        title="Password reset",
+        message="Your Averlen account password was reset successfully.",
+        priority=PRIORITY_SUCCESS,
+        entity_type="user",
+        entity_id=user.id,
+    )
+
+    return MessageResponse(
+        message="Password reset successfully. Sign in with your new password."
+    )
 
 
 @router.post("/login", response_model=Token)
@@ -419,6 +625,28 @@ def login_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if (
+        settings.require_email_verification
+        and user.email_verified_at is None
+        and normalized_email != DEMO_EMAIL.lower()
+    ):
+        create_manual_audit_log(
+            session=session,
+            request=request,
+            action="LOGIN_ATTEMPT",
+            status_code=status.HTTP_403_FORBIDDEN,
+            email=normalized_email,
+            user=user,
+            duration_ms=round((time.perf_counter() - start_time) * 1000, 2),
+        )
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Email address is not verified. Check your inbox or request a new verification email."
+            ),
         )
 
     refresh_session, refresh_token = create_refresh_session(
@@ -744,6 +972,8 @@ def change_password(
     validate_password_strength(payload.new_password)
 
     db_user.hashed_password = hash_password(payload.new_password)
+    db_user.password_reset_token_hash = None
+    db_user.password_reset_expires_at = None
 
     session.add(db_user)
     session.commit()

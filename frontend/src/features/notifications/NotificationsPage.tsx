@@ -435,15 +435,16 @@ export function NotificationsPage() {
         title="Notifications"
         description="Stay on top of imports, pricing opportunities, workspace activity and security events."
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
             {notificationsQuery
               .isPlaceholderData && (
-              <Badge variant="brand">
+              <Badge variant="brand" className="justify-center sm:justify-start">
                 Updating
               </Badge>
             )}
 
             <Badge
+              className="justify-center sm:justify-start"
               variant={
                 unreadCount > 0
                   ? 'brand'
@@ -456,12 +457,13 @@ export function NotificationsPage() {
 
 
             {demoReadOnly ? (
-              <Badge variant="warning">
+              <Badge variant="warning" className="col-span-2 justify-center sm:col-span-1 sm:justify-start">
                 Demo preview · read state fixed
               </Badge>
             ) : (
               <Button
                 variant="secondary"
+                className="w-full justify-center sm:w-auto"
                 disabled={
                   unreadCount === 0 ||
                   markAllMutation.isPending
@@ -484,6 +486,7 @@ export function NotificationsPage() {
 
             <Button
               variant="secondary"
+              className="w-full justify-center sm:w-auto"
               onClick={() => {
                 setShowPreferences(
                   (

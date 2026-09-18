@@ -81,6 +81,21 @@ function getGapVariant(
 }
 
 
+function formatGap(
+  gap: number | null,
+) {
+  if (gap === null) {
+    return 'No data'
+  }
+
+  return `${
+    gap > 0
+      ? '+'
+      : ''
+  }${formatDecimal(gap, 1)}%`
+}
+
+
 export function PricingPortfolioOverview({
   properties,
   onReviewProperty,
@@ -194,7 +209,7 @@ export function PricingPortfolioOverview({
       </div>
 
       <Card className="mt-6 overflow-hidden">
-        <div className="border-b border-slate-200 px-5 py-5 sm:px-6">
+        <div className="border-b border-slate-200 px-4 py-5 sm:px-6">
           <h2 className="font-semibold text-slate-950">
             Property pricing comparison
           </h2>
@@ -204,34 +219,133 @@ export function PricingPortfolioOverview({
           </p>
         </div>
 
-        <div className="overflow-x-auto">
+
+        <div className="divide-y divide-slate-200 xl:hidden">
+          {comparisonRows.map(
+            (property) => {
+              const gap =
+                getPriceGap(
+                  property,
+                )
+
+              return (
+                <article
+                  key={property.property_id}
+                  className="p-4 sm:p-5"
+                >
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-950">
+                        {property.name}
+                      </p>
+
+                      <p className="mt-1 truncate text-sm text-slate-500">
+                        {property.city}
+                        {' · '}
+                        {property.property_type}
+                      </p>
+                    </div>
+
+                    <Badge
+                      variant={
+                        getGapVariant(
+                          gap,
+                        )
+                      }
+                    >
+                      {formatGap(gap)}
+                    </Badge>
+                  </div>
+
+                  <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-slate-100 pt-4 sm:grid-cols-4">
+                    <div>
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                        Base price
+                      </dt>
+                      <dd className="mt-1 text-sm font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+                        {formatCurrency(
+                          property.base_price,
+                        )}
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                        ADR
+                      </dt>
+                      <dd className="mt-1 text-sm font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+                        {property.total_bookings > 0
+                          ? formatCurrency(
+                              property.adr,
+                            )
+                          : '—'}
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                        Bookings
+                      </dt>
+                      <dd className="mt-1 text-sm font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+                        {formatNumber(
+                          property.total_bookings,
+                        )}
+                      </dd>
+                    </div>
+
+                    <div>
+                      <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                        Revenue
+                      </dt>
+                      <dd className="mt-1 text-sm font-medium text-slate-900 [font-variant-numeric:tabular-nums]">
+                        {formatCurrency(
+                          property.total_revenue,
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="mt-4 w-full sm:w-auto"
+                    onClick={() => {
+                      onReviewProperty(
+                        property.property_id,
+                      )
+                    }}
+                  >
+                    Review property
+                  </Button>
+                </article>
+              )
+            },
+          )}
+        </div>
+
+
+        <div className="hidden overflow-x-auto xl:block">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>
                   Property
                 </TableHead>
-
                 <TableHead>
                   Base price
                 </TableHead>
-
                 <TableHead>
                   ADR
                 </TableHead>
-
                 <TableHead>
                   ADR vs base
                 </TableHead>
-
                 <TableHead>
                   Bookings
                 </TableHead>
-
                 <TableHead>
                   Revenue
                 </TableHead>
-
                 <TableHead className="w-24">
                   <span className="sr-only">
                     Review
@@ -250,46 +364,32 @@ export function PricingPortfolioOverview({
 
                   return (
                     <TableRow
-                      key={
-                        property
-                          .property_id
-                      }
+                      key={property.property_id}
                     >
                       <TableCell>
                         <div className="min-w-52">
                           <p className="font-medium text-slate-950">
-                            {
-                              property.name
-                            }
+                            {property.name}
                           </p>
 
                           <p className="mt-0.5 text-xs text-slate-500">
-                            {
-                              property.city
-                            }
+                            {property.city}
                             {' · '}
-                            {
-                              property
-                                .property_type
-                            }
+                            {property.property_type}
                           </p>
                         </div>
                       </TableCell>
 
                       <TableCell className="[font-variant-numeric:tabular-nums]">
                         {formatCurrency(
-                          property
-                            .base_price,
+                          property.base_price,
                         )}
                       </TableCell>
 
                       <TableCell className="[font-variant-numeric:tabular-nums]">
-                        {property
-                          .total_bookings >
-                        0
+                        {property.total_bookings > 0
                           ? formatCurrency(
-                              property
-                                .adr,
+                              property.adr,
                             )
                           : '—'}
                       </TableCell>
@@ -302,31 +402,19 @@ export function PricingPortfolioOverview({
                             )
                           }
                         >
-                          {gap ===
-                          null
-                            ? 'No data'
-                            : `${
-                                gap > 0
-                                  ? '+'
-                                  : ''
-                              }${formatDecimal(
-                                gap,
-                                1,
-                              )}%`}
+                          {formatGap(gap)}
                         </Badge>
                       </TableCell>
 
                       <TableCell className="[font-variant-numeric:tabular-nums]">
                         {formatNumber(
-                          property
-                            .total_bookings,
+                          property.total_bookings,
                         )}
                       </TableCell>
 
                       <TableCell className="font-medium text-slate-950 [font-variant-numeric:tabular-nums]">
                         {formatCurrency(
-                          property
-                            .total_revenue,
+                          property.total_revenue,
                         )}
                       </TableCell>
 
@@ -336,8 +424,7 @@ export function PricingPortfolioOverview({
                           variant="secondary"
                           onClick={() => {
                             onReviewProperty(
-                              property
-                                .property_id,
+                              property.property_id,
                             )
                           }}
                         >

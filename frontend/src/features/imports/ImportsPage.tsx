@@ -859,7 +859,7 @@ export function ImportsPage() {
         title="Data imports"
         description="Upload booking data, validate CSV columns and track ingestion quality."
         actions={
-          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          <div className="grid w-full grid-cols-1 gap-2 min-[480px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap">
             <Button
               variant="secondary"
               size="sm"
@@ -1501,84 +1501,86 @@ function RecentImports({
           }
         />
       ) : jobs.length > 0 ? (
-        <Card className="min-w-0 overflow-hidden">
-          <div className="grid gap-3 p-4 md:hidden">
+        <Card className="min-w-0 overflow-visible border-0 bg-transparent shadow-none md:overflow-hidden md:border md:border-slate-200 md:bg-white md:shadow-sm">
+          <div className="grid gap-3 md:hidden">
             {jobs.map(
               (job) => (
                 <article
                   key={
                     job.job_id
                   }
-                  className="rounded-xl border border-slate-200 bg-white p-4"
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
                 >
-                  <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                      <FileSpreadsheet
-                        size={17}
-                        aria-hidden="true"
-                      />
-                    </div>
+                  <div className="p-4">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                        <FileSpreadsheet
+                          size={18}
+                          aria-hidden="true"
+                        />
+                      </div>
 
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-900">
-                        {
-                          job.filename
-                        }
-                      </p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-slate-950">
+                          {
+                            job.filename
+                          }
+                        </p>
 
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        Import #{job.import_number}
-                        {' · '}
-                        {formatDate(
-                          job.created_at,
-                        )}
-                      </p>
-                    </div>
-
-                    <span
-                      className={`
-                        inline-flex
-                        shrink-0
-                        rounded-full
-                        px-2.5
-                        py-1
-                        text-xs
-                        font-medium
-                        capitalize
-                        ${getStatusClasses(
-                          job.data_removed_at
-                            ? 'reverted'
-                            : job.status,
-                        )}
-                      `}
-                    >
-                      {job.data_removed_at
-                        ? 'Reverted'
-                        : formatStatus(
-                            job.status,
+                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                          Import #{job.import_number}
+                          {' · '}
+                          {formatDate(
+                            job.created_at,
                           )}
-                    </span>
+                        </p>
+
+                        <span
+                          className={`
+                            mt-2
+                            inline-flex
+                            rounded-full
+                            px-2.5
+                            py-1
+                            text-[11px]
+                            font-semibold
+                            capitalize
+                            ${getStatusClasses(
+                              job.data_removed_at
+                                ? 'reverted'
+                                : job.status,
+                            )}
+                          `}
+                        >
+                          {job.data_removed_at
+                            ? 'Reverted'
+                            : formatStatus(
+                                job.status,
+                              )}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-slate-100 pt-4">
-                    <div>
-                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  <dl className="grid grid-cols-3 divide-x divide-slate-200 border-y border-slate-200 bg-slate-50/80">
+                    <div className="px-3 py-3">
+                      <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
                         Rows
                       </dt>
 
-                      <dd className="mt-1 text-sm font-medium text-slate-800">
+                      <dd className="mt-1 text-base font-semibold text-slate-900">
                         {formatNumber(
                           job.total_rows,
                         )}
                       </dd>
                     </div>
 
-                    <div>
-                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    <div className="px-3 py-3">
+                      <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
                         Imported
                       </dt>
 
-                      <dd className="mt-1 text-sm font-medium text-slate-800">
+                      <dd className="mt-1 text-base font-semibold text-slate-900">
                         {formatNumber(
                           job.data_removed_at
                             ? 0
@@ -1587,12 +1589,12 @@ function RecentImports({
                       </dd>
                     </div>
 
-                    <div>
-                      <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                    <div className="px-3 py-3">
+                      <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
                         Failed
                       </dt>
 
-                      <dd className="mt-1 text-sm font-medium text-slate-800">
+                      <dd className="mt-1 text-base font-semibold text-slate-900">
                         {formatNumber(
                           job.failed_rows,
                         )}
@@ -1600,11 +1602,11 @@ function RecentImports({
                     </div>
                   </dl>
 
-                  <div className="mt-4 flex items-center gap-2">
+                  <div className="flex items-center gap-2 p-3">
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="flex-1"
+                      className="min-h-10 flex-1 justify-center"
                       onClick={() => {
                         onView(
                           job.job_id,
@@ -1624,9 +1626,9 @@ function RecentImports({
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="sm"
-                            className="size-8 px-0"
+                            className="size-10 shrink-0 px-0"
                             aria-label={`More actions for Import #${job.import_number}`}
                             disabled={
                               undoingJobId ===

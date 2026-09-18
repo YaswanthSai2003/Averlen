@@ -216,8 +216,8 @@ export function NotificationPreferences({
   onRetry,
 }: NotificationPreferencesProps) {
   return (
-    <Card className="mt-6 overflow-hidden">
-      <div className="border-b border-slate-200 px-5 py-5 sm:px-6">
+    <Card className="mt-5 overflow-hidden">
+      <div className="border-b border-slate-200 px-4 py-4 sm:px-5 sm:py-5 lg:px-6">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="font-semibold text-slate-950">
             Notification preferences
@@ -252,7 +252,7 @@ export function NotificationPreferences({
 
 
       {isLoading ? (
-        <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2">
+        <div className="grid gap-3 p-4 sm:p-5 md:grid-cols-2 lg:p-6">
           {Array.from({
             length: 6,
           }).map(
@@ -318,7 +318,7 @@ export function NotificationPreferences({
                   key={
                     preference.key
                   }
-                  className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 p-4"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3.5 sm:p-4"
                 >
                   <div className="flex min-w-0 gap-3">
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">

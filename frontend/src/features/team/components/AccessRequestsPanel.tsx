@@ -439,7 +439,7 @@ export function AccessRequestsPanel({
               </div>
             </div>
 
-            <div className="scrollbar-hidden flex max-w-full gap-1 overflow-x-auto overflow-y-hidden rounded-lg bg-slate-100 p-1">
+            <div className="grid w-full grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1 sm:flex sm:w-auto">
               {FILTERS.map(
                 (
                   item,
@@ -534,6 +534,106 @@ export function AccessRequestsPanel({
             }
           />
         ) : (
+          <>
+            <div className="divide-y divide-slate-200 md:hidden">
+              {filteredRequests.map(
+                (
+                  request,
+                ) => (
+                  <div
+                    key={
+                      request.id
+                    }
+                    className="px-4 py-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-slate-900">
+                          {request.full_name ||
+                            request.email}
+                        </p>
+
+                        <p className="mt-1 break-all text-xs leading-5 text-slate-500">
+                          {request.email}
+                        </p>
+                      </div>
+
+                      <Badge
+                        variant={
+                          getStatusVariant(
+                            request.status,
+                          )
+                        }
+                      >
+                        {formatStatus(
+                          request.status,
+                        )}
+                      </Badge>
+                    </div>
+
+                    <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+                      <div>
+                        <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                          Requested
+                        </dt>
+
+                        <dd
+                          title={
+                            formatTeamDate(
+                              request.created_at,
+                            )
+                          }
+                          className="mt-1 text-sm text-slate-600"
+                        >
+                          {formatRelativeTeamDate(
+                            request.created_at,
+                          )}
+                        </dd>
+                      </div>
+
+                      <div>
+                        <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                          Access
+                        </dt>
+
+                        <dd className="mt-1 text-sm text-slate-600">
+                          {request.approved_role
+                            ? formatTeamRole(
+                                request.approved_role,
+                              )
+                            : '—'}
+                        </dd>
+                      </div>
+                    </dl>
+
+                    {request.status ===
+                    'pending' &&
+                    !readOnly ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="mt-4 w-full"
+                        onClick={() => {
+                          openReview(
+                            request,
+                          )
+                        }}
+                      >
+                        Review request
+                      </Button>
+                    ) : request.status ===
+                        'pending' &&
+                      readOnly ? (
+                      <p className="mt-4 text-xs text-slate-400">
+                        Read-only workspace
+                      </p>
+                    ) : null}
+                  </div>
+                ),
+              )}
+            </div>
+
+            <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -651,6 +751,8 @@ export function AccessRequestsPanel({
               )}
             </TableBody>
           </Table>
+            </div>
+          </>
         )}
       </Card>
 

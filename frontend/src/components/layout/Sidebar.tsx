@@ -1,27 +1,23 @@
-import { Menu } from 'lucide-react'
 import { NavLink } from 'react-router'
 
 import {
   getVisibleNavigationSections,
 } from '../../app/navigation'
-
 import { cn } from '../../lib/cn'
 import type { UserRole } from '../../types/auth'
 
 import { Brand } from './Brand'
 
+
 type SidebarProps = {
   role: UserRole
   expanded: boolean
-  onToggle: () => void
-  onNavigate?: () => void
 }
+
 
 export function Sidebar({
   role,
   expanded,
-  onToggle,
-  onNavigate,
 }: SidebarProps) {
   const sections =
     getVisibleNavigationSections(role)
@@ -40,31 +36,13 @@ export function Sidebar({
         )}
       >
         {expanded ? (
-          <>
-            <div className="flex min-w-0 flex-1 items-center pl-3">
-              <Brand
-                href="/app/overview"
-                wordmarkOnly
-                className="max-w-full"
-              />
-            </div>
-
-            <button
-              type="button"
-              aria-label="Collapse navigation"
-              title="Collapse navigation"
-              onClick={
-                onToggle
-              }
-              className="ml-2 flex size-8 shrink-0 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 md:hidden"
-            >
-              <Menu
-                size={19}
-                strokeWidth={1.9}
-                aria-hidden="true"
-              />
-            </button>
-          </>
+          <div className="flex min-w-0 flex-1 items-center pl-3">
+            <Brand
+              href="/app/overview"
+              wordmarkOnly
+              className="max-w-full"
+            />
+          </div>
         ) : (
           <Brand
             href="/app/overview"
@@ -112,7 +90,10 @@ export function Sidebar({
                     <NavLink
                       key={item.path}
                       to={item.path}
-                      end={item.path === '/app/overview'}
+                      end={
+                        item.path ===
+                        '/app/overview'
+                      }
                       aria-label={
                         expanded
                           ? undefined
@@ -122,9 +103,6 @@ export function Sidebar({
                         expanded
                           ? undefined
                           : item.label
-                      }
-                      onClick={
-                        onNavigate
                       }
                       className={({ isActive }) =>
                         cn(

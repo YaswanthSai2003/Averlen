@@ -190,38 +190,48 @@ export function InviteRegistrationForm({
     )
 
     try {
-      await registerAccount({
-        email:
-          invite.email,
+      const createdUser =
+        await registerAccount({
+          email:
+            invite.email,
 
-        password:
-          values.password,
+          password:
+            values.password,
 
-        full_name:
-          values.fullName.trim(),
+          full_name:
+            values.fullName.trim(),
 
-        accepted_terms:
-          values.acceptedTerms,
+          accepted_terms:
+            values.acceptedTerms,
 
-        accepted_privacy_policy:
-          values.acceptedPrivacy,
+          accepted_privacy_policy:
+            values.acceptedPrivacy,
 
-        invite_token:
-          inviteToken,
-      })
+          invite_token:
+            inviteToken,
+        })
+
+      if (createdUser.email_verified_at) {
+        navigate(
+          '/login',
+          {
+            replace: true,
+            state: {
+              registered: true,
+              email: invite.email,
+            },
+          },
+        )
+
+        return
+      }
 
       navigate(
-        '/login',
+        `/verify-email?email=${encodeURIComponent(
+          invite.email,
+        )}`,
         {
           replace: true,
-
-          state: {
-            registered:
-              true,
-
-            email:
-              invite.email,
-          },
         },
       )
     } catch (

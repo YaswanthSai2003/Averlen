@@ -38,9 +38,11 @@ type TopBarProps = {
 
   unreadNotifications?: number
 
-  sidebarExpanded: boolean
+  desktopSidebarExpanded: boolean
 
-  onToggleNavigation: () => void
+  onToggleDesktopNavigation: () => void
+
+  onOpenMobileNavigation: () => void
 
   onSignOut:
     () => void | Promise<void>
@@ -54,8 +56,9 @@ export function TopBar({
   globalSearch,
   notificationBell,
   unreadNotifications = 0,
-  sidebarExpanded,
-  onToggleNavigation,
+  desktopSidebarExpanded,
+  onToggleDesktopNavigation,
+  onOpenMobileNavigation,
   onSignOut,
 }: TopBarProps) {
   const navigate =
@@ -69,41 +72,43 @@ export function TopBar({
 
 
   return (
-    <header className="bg-white/90 backdrop-blur-md">
-      <div className="flex h-[4.25rem] min-w-0 items-center gap-2.5 px-3 sm:px-5 xl:px-7">
+    <header className="border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+      <div className="flex h-[4.25rem] min-w-0 items-center gap-2 px-3 sm:gap-2.5 sm:px-5 xl:px-7">
+        <button
+          type="button"
+          aria-label="Open navigation"
+          aria-haspopup="dialog"
+          onClick={
+            onOpenMobileNavigation
+          }
+          className="flex size-9 shrink-0 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 xl:hidden"
+        >
+          <Menu
+            size={20}
+            aria-hidden="true"
+          />
+        </button>
+
         <button
           type="button"
           aria-label={
-            sidebarExpanded
+            desktopSidebarExpanded
               ? 'Collapse navigation'
               : 'Expand navigation'
           }
           aria-expanded={
-            sidebarExpanded
+            desktopSidebarExpanded
           }
           aria-controls="app-navigation"
           title={
-            sidebarExpanded
+            desktopSidebarExpanded
               ? 'Collapse navigation'
               : 'Expand navigation'
           }
           onClick={
-            onToggleNavigation
+            onToggleDesktopNavigation
           }
-          className="
-            flex
-            size-9
-            items-center
-            justify-center
-            rounded-md
-            text-slate-600
-            transition-colors
-            hover:bg-slate-100
-            hover:text-slate-950
-            focus-visible:outline-none
-            focus-visible:ring-2
-            focus-visible:ring-brand-500
-          "
+          className="hidden size-9 shrink-0 items-center justify-center rounded-md text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 xl:flex"
         >
           <Menu
             size={20}
@@ -112,34 +117,21 @@ export function TopBar({
         </button>
 
 
-        {globalSearch}
+        <div className="min-w-0 flex-1">
+          {globalSearch}
+        </div>
 
 
-        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           {notificationBell ?? (
             <button
               type="button"
               aria-label={
-                unreadNotifications >
-                0
+                unreadNotifications > 0
                   ? `${unreadNotifications} unread notifications`
                   : 'Notifications'
               }
-              className="
-                relative
-                flex
-                size-9
-                items-center
-                justify-center
-                rounded-md
-                text-slate-500
-                transition-colors
-                hover:bg-slate-100
-                hover:text-slate-900
-                focus-visible:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-brand-500
-              "
+              className="relative flex size-9 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <Bell
                 size={19}
@@ -147,30 +139,9 @@ export function TopBar({
                 aria-hidden="true"
               />
 
-
-              {unreadNotifications >
-                0 && (
-                <span
-                  className="
-                    absolute
-                    right-0.5
-                    top-0.5
-                    flex
-                    min-w-4
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-danger-600
-                    px-1
-                    text-[10px]
-                    font-semibold
-                    leading-4
-                    text-white
-                  "
-                >
-                  {
-                    visibleUnreadCount
-                  }
+              {unreadNotifications > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex min-w-4 items-center justify-center rounded-full bg-danger-600 px-1 text-[10px] font-semibold leading-4 text-white">
+                  {visibleUnreadCount}
                 </span>
               )}
             </button>
@@ -183,32 +154,13 @@ export function TopBar({
             >
               <button
                 type="button"
-                className="
-                  flex
-                  items-center
-                  gap-2.5
-                  rounded-md
-                  px-1.5
-                  py-1.5
-                  text-left
-                  transition-colors
-                  hover:bg-slate-100
-                  focus-visible:outline-none
-                  focus-visible:ring-2
-                  focus-visible:ring-brand-500
-                  sm:px-2
-                "
+                className="flex items-center gap-2.5 rounded-md px-1 py-1.5 text-left transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:px-2"
               >
                 <Avatar
-                  name={
-                    userName
-                  }
-                  src={
-                    avatarUrl
-                  }
+                  name={userName}
+                  src={avatarUrl}
                   size="sm"
                 />
-
 
                 <div className="hidden min-w-0 xl:block">
                   <p className="max-w-40 truncate text-[13px] font-semibold text-slate-900">
@@ -219,7 +171,6 @@ export function TopBar({
                     {userEmail}
                   </p>
                 </div>
-
 
                 <ChevronDown
                   size={15}
@@ -244,14 +195,11 @@ export function TopBar({
                 </p>
               </div>
 
-
               <DropdownMenuSeparator />
-
 
               <DropdownMenuLabel>
                 Account
               </DropdownMenuLabel>
-
 
               <DropdownMenuItem
                 onSelect={() => {
@@ -264,13 +212,10 @@ export function TopBar({
                   size={16}
                   aria-hidden="true"
                 />
-
                 Profile
               </DropdownMenuItem>
 
-
               <DropdownMenuSeparator />
-
 
               <DropdownMenuItem
                 destructive
@@ -282,7 +227,6 @@ export function TopBar({
                   size={16}
                   aria-hidden="true"
                 />
-
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>

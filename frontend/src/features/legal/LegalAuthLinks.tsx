@@ -20,7 +20,7 @@ export function LegalAuthLinks({
         to="/terms"
         target="_blank"
         rel="noreferrer"
-        className="transition hover:text-brand-700"
+        className="cursor-pointer transition hover:text-brand-700"
       >
         Terms of Service
       </Link>
@@ -33,7 +33,7 @@ export function LegalAuthLinks({
         to="/privacy"
         target="_blank"
         rel="noreferrer"
-        className="transition hover:text-brand-700"
+        className="cursor-pointer transition hover:text-brand-700"
       >
         Privacy Policy
       </Link>

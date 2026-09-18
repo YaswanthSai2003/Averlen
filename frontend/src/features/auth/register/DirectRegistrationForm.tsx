@@ -368,7 +368,7 @@ export function DirectRegistrationForm() {
       }
 
       navigate(
-        `/verify-email?email=${encodeURIComponent(
+        `/verify?email=${encodeURIComponent(
           identity.email,
         )}`,
         {
@@ -703,6 +703,7 @@ export function DirectRegistrationForm() {
           <Input
             label="Password"
             type="password"
+            showPasswordToggle
             autoComplete="new-password"
             placeholder="At least 8 characters"
             hint="Use between 8 and 128 characters."
@@ -718,6 +719,7 @@ export function DirectRegistrationForm() {
           <Input
             label="Confirm password"
             type="password"
+            showPasswordToggle
             autoComplete="new-password"
             placeholder="Enter your password again"
             error={
@@ -735,7 +737,7 @@ export function DirectRegistrationForm() {
                 <input
                   id="accepted-terms"
                   type="checkbox"
-                  className="mt-1 size-4 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  className="mt-1 size-4 shrink-0 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                   {...securityForm.register(
                     'acceptedTerms',
                   )}
@@ -753,7 +755,7 @@ export function DirectRegistrationForm() {
                     to="/terms"
                     target="_blank"
                     rel="noreferrer"
-                    className="font-medium text-brand-700 underline-offset-4 transition hover:text-brand-800 hover:underline"
+                    className="cursor-pointer font-medium text-brand-700 underline-offset-4 transition hover:text-brand-800 hover:underline"
                   >
                     Terms of Service
                   </Link>
@@ -773,7 +775,7 @@ export function DirectRegistrationForm() {
                 <input
                   id="accepted-privacy"
                   type="checkbox"
-                  className="mt-1 size-4 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  className="mt-1 size-4 shrink-0 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                   {...securityForm.register(
                     'acceptedPrivacy',
                   )}
@@ -791,7 +793,7 @@ export function DirectRegistrationForm() {
                     to="/privacy"
                     target="_blank"
                     rel="noreferrer"
-                    className="font-medium text-brand-700 underline-offset-4 transition hover:text-brand-800 hover:underline"
+                    className="cursor-pointer font-medium text-brand-700 underline-offset-4 transition hover:text-brand-800 hover:underline"
                   >
                     Privacy Policy
                   </Link>

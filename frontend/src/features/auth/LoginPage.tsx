@@ -272,7 +272,7 @@ export function LoginPage() {
 
               {verificationRequired && (
                 <Link
-                  to={`/verify-email?email=${encodeURIComponent(
+                  to={`/verify?email=${encodeURIComponent(
                     getValues(
                       'email',
                     ),
@@ -311,6 +311,7 @@ export function LoginPage() {
               <Input
                 label="Password"
                 type="password"
+                showPasswordToggle
                 autoComplete="current-password"
                 placeholder="Enter your password"
                 error={

@@ -27,6 +27,7 @@ from app.db.models import Organization, User
 from app.schemas.auth import (
     ChangePasswordRequest,
     EmailActionRequest,
+    EmailVerificationResponse,
     MessageResponse,
     ResetPasswordRequest,
     SessionListResponse,
@@ -476,7 +477,7 @@ def resend_verification_email(
 
 @router.post(
     "/verify-email",
-    response_model=MessageResponse,
+    response_model=EmailVerificationResponse,
 )
 @limiter.limit("20/hour")
 def verify_email(
@@ -484,13 +485,14 @@ def verify_email(
     payload: TokenActionRequest,
     session: Session = Depends(get_session),
 ):
-    verify_email_token(
+    user = verify_email_token(
         session=session,
         raw_token=payload.token,
     )
 
-    return MessageResponse(
-        message="Email verified successfully. You can now sign in."
+    return EmailVerificationResponse(
+        message="Email verified successfully. You can now sign in.",
+        email=user.email,
     )
 
 

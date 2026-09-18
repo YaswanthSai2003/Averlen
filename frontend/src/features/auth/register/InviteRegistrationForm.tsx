@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 
 import {
+  Link,
   useNavigate,
 } from 'react-router'
 
@@ -35,7 +36,6 @@ import {
 
 import {
   Button,
-  Checkbox,
   Input,
   Spinner,
 } from '../../../components/ui'
@@ -227,7 +227,7 @@ export function InviteRegistrationForm({
       }
 
       navigate(
-        `/verify-email?email=${encodeURIComponent(
+        `/verify?email=${encodeURIComponent(
           invite.email,
         )}`,
         {
@@ -380,6 +380,7 @@ export function InviteRegistrationForm({
         <Input
           label="Password"
           type="password"
+          showPasswordToggle
           autoComplete="new-password"
           placeholder="At least 8 characters"
           hint="Use between 8 and 128 characters."
@@ -395,6 +396,7 @@ export function InviteRegistrationForm({
         <Input
           label="Confirm password"
           type="password"
+          showPasswordToggle
           autoComplete="new-password"
           placeholder="Enter your password again"
           error={
@@ -407,27 +409,81 @@ export function InviteRegistrationForm({
         />
 
         <div className="grid gap-3 pt-1">
-          <Checkbox
-            label="I agree to the Terms of Service."
-            error={
-              form.formState.errors.acceptedTerms
-                ?.message
-            }
-            {...form.register(
-              'acceptedTerms',
-            )}
-          />
+          <div>
+            <div className="flex items-start gap-3">
+              <input
+                id="invite-accepted-terms"
+                type="checkbox"
+                className="mt-1 size-4 shrink-0 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                {...form.register(
+                  'acceptedTerms',
+                )}
+              />
 
-          <Checkbox
-            label="I agree to the Privacy Policy."
-            error={
-              form.formState.errors.acceptedPrivacy
-                ?.message
-            }
-            {...form.register(
-              'acceptedPrivacy',
+              <p className="text-sm leading-6 text-slate-700">
+                <label
+                  htmlFor="invite-accepted-terms"
+                  className="cursor-pointer"
+                >
+                  I agree to the{' '}
+                </label>
+
+                <Link
+                  to="/terms"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="cursor-pointer font-medium text-brand-700 underline-offset-4 transition hover:text-brand-800 hover:underline"
+                >
+                  Terms of Service
+                </Link>
+                .
+              </p>
+            </div>
+
+            {form.formState.errors.acceptedTerms?.message && (
+              <p className="mt-1 pl-7 text-xs text-danger-600">
+                {form.formState.errors.acceptedTerms.message}
+              </p>
             )}
-          />
+          </div>
+
+          <div>
+            <div className="flex items-start gap-3">
+              <input
+                id="invite-accepted-privacy"
+                type="checkbox"
+                className="mt-1 size-4 shrink-0 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                {...form.register(
+                  'acceptedPrivacy',
+                )}
+              />
+
+              <p className="text-sm leading-6 text-slate-700">
+                <label
+                  htmlFor="invite-accepted-privacy"
+                  className="cursor-pointer"
+                >
+                  I agree to the{' '}
+                </label>
+
+                <Link
+                  to="/privacy"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="cursor-pointer font-medium text-brand-700 underline-offset-4 transition hover:text-brand-800 hover:underline"
+                >
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+            </div>
+
+            {form.formState.errors.acceptedPrivacy?.message && (
+              <p className="mt-1 pl-7 text-xs text-danger-600">
+                {form.formState.errors.acceptedPrivacy.message}
+              </p>
+            )}
+          </div>
         </div>
 
         <Button

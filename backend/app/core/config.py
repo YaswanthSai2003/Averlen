@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     email_from: str = "Averlen <onboarding@resend.dev>"
     email_reply_to: str = ""
+    email_logo_url: str = "https://averlen-web.onrender.com/averlen-wordmark.png"
     email_send_timeout_seconds: int = 10
 
     database_url: str = "sqlite:///./averlen.db"

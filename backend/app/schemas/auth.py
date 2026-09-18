@@ -39,6 +39,11 @@ class MessageResponse(SQLModel):
     message: str
 
 
+class EmailVerificationResponse(SQLModel):
+    message: str
+    email: str
+
+
 class UserRead(SQLModel):
     id: int
     organization_id: int

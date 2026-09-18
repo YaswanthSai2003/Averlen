@@ -64,6 +64,7 @@ def test_verify_email_allows_login(client, session, monkeypatch):
     )
 
     assert verify_response.status_code == 200
+    assert verify_response.json()["email"] == REGISTER_PAYLOAD["email"]
 
     session.refresh(user)
     assert user.email_verified_at is not None

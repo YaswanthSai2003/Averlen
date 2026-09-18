@@ -407,7 +407,7 @@ export function SecuritySettings({
 
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 transition hover:text-slate-700"
+                    className="absolute inset-y-0 right-0 flex w-11 cursor-pointer items-center justify-center text-slate-400 transition hover:text-slate-700"
                     aria-label={
                       showCurrent
                         ? 'Hide current password'
@@ -481,7 +481,7 @@ export function SecuritySettings({
 
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 transition hover:text-slate-700"
+                    className="absolute inset-y-0 right-0 flex w-11 cursor-pointer items-center justify-center text-slate-400 transition hover:text-slate-700"
                     aria-label={
                       showNew
                         ? 'Hide new password'
@@ -566,6 +566,7 @@ export function SecuritySettings({
 
                 <Input
                   type="password"
+                  showPasswordToggle
                   value={
                     confirmPassword
                   }

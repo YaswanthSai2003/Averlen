@@ -276,6 +276,8 @@ export function VerifyEmailPage() {
                 state={{
                   emailVerified:
                     true,
+                  email:
+                    verificationQuery.data.email,
                 }}
                 className="
                   mt-8
@@ -333,7 +335,7 @@ export function VerifyEmailPage() {
               </p>
 
               <Link
-                to="/verify-email"
+                to="/verify"
                 className="
                   mt-7
                   inline-flex

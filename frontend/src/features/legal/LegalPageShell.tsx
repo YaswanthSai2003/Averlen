@@ -38,7 +38,7 @@ export function LegalPageShell({
 
           <Link
             to="/login"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900"
+            className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900"
           >
             <ArrowLeft
               size={15}
@@ -74,14 +74,14 @@ export function LegalPageShell({
           <footer className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 bg-slate-50 px-6 py-4 text-xs text-slate-500 sm:px-8">
             <Link
               to="/terms"
-              className="font-medium transition hover:text-brand-700"
+              className="cursor-pointer font-medium transition hover:text-brand-700"
             >
               Terms of Service
             </Link>
 
             <Link
               to="/privacy"
-              className="font-medium transition hover:text-brand-700"
+              className="cursor-pointer font-medium transition hover:text-brand-700"
             >
               Privacy Policy
             </Link>

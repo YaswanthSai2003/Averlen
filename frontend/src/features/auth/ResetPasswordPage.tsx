@@ -280,6 +280,7 @@ export function ResetPasswordPage() {
                 <Input
                   label="New password"
                   type="password"
+                  showPasswordToggle
                   autoComplete="new-password"
                   placeholder="At least 8 characters"
                   error={
@@ -294,6 +295,7 @@ export function ResetPasswordPage() {
                 <Input
                   label="Confirm new password"
                   type="password"
+                  showPasswordToggle
                   autoComplete="new-password"
                   placeholder="Enter your password again"
                   error={

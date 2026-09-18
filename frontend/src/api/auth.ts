@@ -167,6 +167,17 @@ const messageSchema =
   })
 
 
+const emailVerificationSchema =
+  z.object({
+    message:
+      z.string(),
+
+    email:
+      z.string()
+        .email(),
+  })
+
+
 export type AuthUser =
   Omit<
     z.infer<
@@ -378,7 +389,7 @@ export async function verifyEmail(
       },
     )
 
-  return messageSchema.parse(
+  return emailVerificationSchema.parse(
     raw,
   )
 }

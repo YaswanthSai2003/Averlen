@@ -470,6 +470,16 @@ export function AppRouter() {
 
 
       <Route
+        path="/verify"
+        element={
+          <LazyRoute>
+            <VerifyEmailPage />
+          </LazyRoute>
+        }
+      />
+
+
+      <Route
         path="/verify-email"
         element={
           <LazyRoute>

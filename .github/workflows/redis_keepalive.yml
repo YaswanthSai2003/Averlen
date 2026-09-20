@@ -22,4 +22,4 @@ jobs:
             --retry-delay 10 \
             --max-time 180 \
             -H "X-Keepalive-Token: ${{ secrets.KEEPALIVE_TOKEN }}" \
-            "${{ secrets.AVERLEN_BACKEND_URL }}/keepalive/redis"
+            "${{ vars.AVERLEN_BACKEND_URL }}/keepalive/redis"

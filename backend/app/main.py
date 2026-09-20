@@ -27,6 +27,7 @@ from app.api.property_routes import router as property_router
 from app.api.search_routes import router as search_router
 from app.api.upload_routes import router as upload_router
 from app.api.workspace_routes import router as workspace_router
+from app.core.cache import get_redis_client
 from app.core.config import settings
 from app.core.logging import configure_logging, logger
 from app.db.database import engine
@@ -136,6 +137,7 @@ SKIP_LOG_PATHS = {
     "/api/health",
     "/healthz",
     "/readyz",
+    "/keepalive/redis",
 }
 
 SKIP_LOG_PREFIXES = (
@@ -311,6 +313,34 @@ def readyz():
                 "detail": str(exc),
             },
         )
+
+
+@app.get("/keepalive/redis", include_in_schema=False)
+def redis_keepalive(request: Request):
+    expected_token = os.getenv("KEEPALIVE_TOKEN")
+    supplied_token = request.headers.get("X-Keepalive-Token")
+
+    if not expected_token or supplied_token != expected_token:
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Not found"},
+        )
+
+    redis_client = get_redis_client()
+
+    if redis_client is None:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "redis": "unavailable",
+            },
+        )
+
+    return {
+        "status": "ok",
+        "redis": "ok",
+    }
 
 
 app.include_router(auth_router, prefix="/api")
